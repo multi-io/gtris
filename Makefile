@@ -1,4 +1,4 @@
-#  $Id: Makefile,v 1.5.4.3 1999/10/24 10:40:21 olaf Exp $
+#  $Id: Makefile,v 1.5.4.4 1999/10/24 16:29:09 olaf Exp $
 
 #  GTris
 #  $Name:  $
@@ -113,7 +113,7 @@ tgz distrib:
 	echo making $$TGZNAME ...; \
 	mkdir $$DIRNAME; \
 	rm -rf $$DIRNAME/*; \
-	cp *.cc *.h $(XPMS) Makefile hscores.bin COPYING INSTALL $$DIRNAME/; \
+	cp *.cc *.h $(XPMS) title.xpm Makefile hscores.bin COPYING INSTALL $$DIRNAME/; \
 	rm -f $$DIRNAME/xpms.* 2>/dev/null; \
 	tar c $$DIRNAME/ | gzip >$$TGZNAME; \
 	rm -rf $$DIRNAME/

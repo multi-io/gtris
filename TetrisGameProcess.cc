@@ -1,4 +1,4 @@
-/*  $Id: TetrisGameProcess.cc,v 1.6.2.1 1999/08/29 18:28:32 olaf Exp $ */
+/*  $Id: TetrisGameProcess.cc,v 1.6.2.2 1999/10/24 10:40:21 olaf Exp $ */
 
 /*  GTris
  *  $Name:  $
@@ -120,8 +120,6 @@ void CTetrisGameProcess::DropDownCurrentStone (void)
           current_stone.position.y,
           CL_BLACK);
 
-    current_stone.valid=FALSE;
-
     int  depth=127;
 
     FOR_EACH_SHAPE_POINT(current_stone.shape,curr_point)
@@ -185,8 +183,6 @@ void CTetrisGameProcess::DropDownCurrentStone (void)
         cntnts[0] = new GdkColor[PFExtend.x];
         for (int i2=0; i2<PFExtend.x; i2++)
             cntnts[0][i2] = CL_BLACK;
-        //        memmove (cntnts[1], cntnts,
-        //           PFExtend.x*sizeof(COLORREF)*line[i]);
         for (int n=i+1;n<no_lines;n++)
             if (line[n]<line[i]) line[n]++;
     }
@@ -196,13 +192,14 @@ void CTetrisGameProcess::DropDownCurrentStone (void)
          sndPlaySound (wavLine,SND_ASYNC);
     else sndPlaySound (wavTouchDown,SND_ASYNC);
 */
-//  RepaintHeap(); //Haufen neu zeichnen
 
     gtk_brick_viewer_SetContents (m_bvPlayField,cntnts);
     gtk_brick_viewer_FreeRect (cntnts,gtk_brick_viewer_GetRows(m_bvPlayField));
 
     m_score += inc_stone+depth*inc_drop1line+no_lines*inc_line;
     m_lines += no_lines;
+
+    current_stone.valid=FALSE;
 }
 
 //TODO: Zur Performance - Verbesserung in DropDownCurrentStone:
@@ -246,12 +243,13 @@ bool CTetrisGameProcess::PointInHeap (int col, int row)
 
 void CTetrisGameProcess::SetCurrentStone (const tetr_stone& new_one)
 {
-    gtk_brick_viewer_PasteShape
-        (m_bvPlayField,
-         current_stone.shape,
-         current_stone.position.x,
-         current_stone.position.y,
-         CL_BLACK);
+    if (current_stone.valid)
+        gtk_brick_viewer_PasteShape
+            (m_bvPlayField,
+             current_stone.shape,
+             current_stone.position.x,
+             current_stone.position.y,
+             CL_BLACK);
 
     current_stone = new_one;
     current_stone.valid = TRUE;

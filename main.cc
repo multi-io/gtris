@@ -1,4 +1,4 @@
-/*  $Id: main.cc,v 1.6.2.1 1999/08/29 18:28:32 olaf Exp $ */
+/*  $Id: main.cc,v 1.6.2.2 1999/10/24 10:40:22 olaf Exp $ */
 
 /*  GTris
  *  $Name:  $
@@ -20,6 +20,7 @@
  */
 
 #include <gtk/gtk.h>
+#include <gdk/gdkkeysyms.h>
 #include <stdio.h>
 #include <string>
 #include "gtkbrickviewer.h"
@@ -226,9 +227,6 @@ int main (int argc, char* argv[])
 
     gtk_main ();
 
-    delete m_pGameProcess;
-    delete m_pHighscoresManager;
-
     registry.SetValue ("Level", m_Level);
     registry.SetValue ("StoneColorRange",
                        m_pGameProcess->m_StoneColorRange==CTetrisGameProcess::scrBlackWhite?
@@ -236,6 +234,9 @@ int main (int argc, char* argv[])
     registry.SetValue ("HscFile", m_HscFile);
     registry.SetValue ("HscUserName", m_HscUserName);
     registry.SetValue ("BrickSize", gtk_brick_viewer_GetBrickSize (m_bvPlayField));
+
+    delete m_pGameProcess;
+    delete m_pHighscoresManager;
 
     return 0;
 }
@@ -260,6 +261,7 @@ static void OnGameRun();
 static void OnGamePause();
 static void OnViewHighscores();
 static void OnOptionsGameOptions();
+static void OnHelpAbout();
 static void OnOptionsLevel (GtkWidget*, unsigned* pLevel);
 
 static GtkMenuItem* m_mniGameNew;
@@ -316,7 +318,9 @@ static GtkItemFactoryEntry menu_items[] = {
   { "/_View",        (char*)NULL,  NULL, 0, "<Branch>" },
   { "/View/_Highscores",  (char*)NULL,  (GtkItemFactoryCallback)OnViewHighscores, 0, NULL },
   { "/_Options",        (char*)NULL,  NULL, 0, "<Branch>" },
-  { "/Options/_Game Options",  (char*)NULL,  (GtkItemFactoryCallback)OnOptionsGameOptions, 0, NULL }
+  { "/Options/_Game Options",  (char*)NULL,  (GtkItemFactoryCallback)OnOptionsGameOptions, 0, NULL },
+  { "/_Help",        (char*)NULL,  NULL, 0, "<LastBranch>" },
+  { "/Help/_About",  (char*)NULL,  (GtkItemFactoryCallback)OnHelpAbout, 0, NULL }
 };
 
 static void UpdateItems ();
@@ -517,6 +521,79 @@ static void OnOptionsLevel (GtkWidget*, unsigned* pLevel)
     UpdateLevelDisplay();
 }
 
+
+static GtkDialog* aboutbox;
+static void on_aboutbox_close_click (GtkWidget*, gpointer p);
+static gint on_aboutbox_delete ( GtkWidget*, GdkEvent, gpointer );
+
+static void OnHelpAbout()
+{
+    aboutbox = GTK_DIALOG( gtk_dialog_new() );
+    gtk_window_set_title ( GTK_WINDOW(aboutbox), "About GTris");
+    gtk_widget_realize (GTK_WIDGET(aboutbox));
+
+    GtkAccelGroup* accel_group = gtk_accel_group_new ();
+    gtk_accel_group_attach (accel_group, GTK_OBJECT (aboutbox));
+
+    GdkBitmap* mask;
+    GdkPixmap* pm = gdk_pixmap_create_from_xpm
+        (GTK_WIDGET(aboutbox)->window,
+         &mask,
+         &(gtk_widget_get_style (GTK_WIDGET(aboutbox))->bg[GTK_STATE_NORMAL]),
+         "title.xpm");
+    GtkPixmap* pmwidget = GTK_PIXMAP( gtk_pixmap_new (pm,mask) );
+
+    //TODO: Der Separator in einem GtkDialog gehoert mit zur dessen vbox
+    //(siehe gtkdialog.c, Fkt. gtk_dialog_init). Deshalb fuehrt folgender Befehl dazu, dass
+    //nicht nur die Pixmap, sondern auch der Separator 5 Pixel vom Rand eingerueckt wird.
+    //gtk_container_set_border_width (GTK_CONTAINER(aboutbox->vbox),5);
+    //==> Ist das nun ein Bug oder ein Feature von GtkDialog?
+
+    gtk_box_pack_start (GTK_BOX(aboutbox->vbox), GTK_WIDGET(pmwidget), FALSE, TRUE, 0);
+    gtk_widget_show (GTK_WIDGET(pmwidget));
+
+    GtkWidget* btn = gtk_button_new();
+    connect_button_accelerator (GTK_BUTTON(btn),"_Close",accel_group);
+    gtk_box_pack_start (GTK_BOX(aboutbox->action_area), btn, FALSE, TRUE, 0);
+    gtk_signal_connect (GTK_OBJECT(btn), "clicked",
+                        GTK_SIGNAL_FUNC(on_aboutbox_close_click), NULL);
+    gtk_widget_show (btn);
+
+    gtk_widget_add_accelerator
+            (btn, "clicked",
+             accel_group,
+             GDK_Return,
+             0,
+             GTK_ACCEL_LOCKED);
+    gtk_widget_add_accelerator
+            (btn, "clicked",
+             accel_group,
+             GDK_Escape,
+             0,
+             GTK_ACCEL_LOCKED);
+
+    gtk_signal_connect (GTK_OBJECT (aboutbox), "delete_event",
+                        GTK_SIGNAL_FUNC (on_aboutbox_delete), NULL);
+
+    gtk_widget_show (GTK_WIDGET(aboutbox));
+
+    gtk_grab_add (GTK_WIDGET(aboutbox));
+    gtk_main ();
+    gtk_grab_remove (GTK_WIDGET(aboutbox));
+
+    gtk_widget_destroy (GTK_WIDGET(aboutbox));
+}
+
+static void on_aboutbox_close_click ( GtkWidget*, gpointer )
+{
+    gtk_widget_hide (GTK_WIDGET(aboutbox));
+    gtk_main_quit();
+}
+
+static gint on_aboutbox_delete ( GtkWidget*, GdkEvent, gpointer )
+{
+    gtk_main_quit();
+}
 
 
 static GtkLabel

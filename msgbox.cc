@@ -1,4 +1,4 @@
-/*  $Id: msgbox.cc,v 1.3.4.2 1999/08/29 18:30:43 olaf Exp $ */
+/*  $Id: msgbox.cc,v 1.3.4.3 1999/10/24 10:40:22 olaf Exp $ */
 
 /*  GTris
  *  $Name:  $
@@ -23,16 +23,17 @@
 #include <vector>
 #include <gtk/gtk.h>
 #include "msgbox.h"
+#include "utils.h"
 
 using namespace std;
 
  
 const char* btnLabels[nBtnTypes] =
 {
-    "OK",
-    "Cancel",
-    "Yes",
-    "No"
+    "_OK",
+    "_Cancel",
+    "_Yes",
+    "_No"
 };
 
 const int twoPowX [] = {1,2,4,8,16,32,64,128};
@@ -50,6 +51,9 @@ int MsgBox (const char* title, const char* msg, int btns)
     m_dialog = GTK_DIALOG( gtk_dialog_new() );
     gtk_window_set_title ( GTK_WINDOW(m_dialog), title);
 
+    GtkAccelGroup* accel_group = gtk_accel_group_new ();
+    gtk_accel_group_attach (accel_group, GTK_OBJECT (m_dialog));
+
     GtkWidget* msglabel = gtk_label_new (msg);
     gtk_label_set_line_wrap (GTK_LABEL(msglabel), true);
     gtk_label_set_justify (GTK_LABEL(msglabel), GTK_JUSTIFY_FILL);
@@ -61,7 +65,8 @@ int MsgBox (const char* title, const char* msg, int btns)
     {
         if (btns & twoPowX[i])
         {
-            GtkWidget* btn = gtk_button_new_with_label(btnLabels[i]);
+            GtkWidget* btn = gtk_button_new();
+            connect_button_accelerator (GTK_BUTTON(btn),btnLabels[i],accel_group);
             gtk_box_pack_start (GTK_BOX(m_dialog->action_area), btn, FALSE, TRUE, 0);
             gtk_signal_connect (GTK_OBJECT(btn), "clicked",
                                 GTK_SIGNAL_FUNC(btn_click), (void*) &(btnLabels[i]));

@@ -1,4 +1,4 @@
-#  $Id: Makefile,v 1.5.4.2 1999/10/17 09:30:10 olaf Exp $
+#  $Id: Makefile,v 1.5.4.3 1999/10/24 10:40:21 olaf Exp $
 
 #  GTris
 #  $Name:  $
@@ -42,7 +42,7 @@ OBJECTS = \
 default: release
 
 debug:
-	$(MAKE) gtris CXXFLAGS=-g
+	$(MAKE) gtris CXXFLAGS='-g -O0'
 
 release:
 	$(MAKE) gtris CXXFLAGS=-O2
@@ -112,11 +112,11 @@ tgz distrib:
 	TGZNAME=$${DIRNAME}.tar.gz; \
 	echo making $$TGZNAME ...; \
 	mkdir $$DIRNAME; \
-	rm -Rf $$DIRNAME/*; \
+	rm -rf $$DIRNAME/*; \
 	cp *.cc *.h $(XPMS) Makefile hscores.bin COPYING INSTALL $$DIRNAME/; \
 	rm -f $$DIRNAME/xpms.* 2>/dev/null; \
 	tar c $$DIRNAME/ | gzip >$$TGZNAME; \
-	rm -Rf $$DIRNAME/
+	rm -rf $$DIRNAME/
 
 .PHONY: clean
 clean:

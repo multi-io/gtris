@@ -1,4 +1,4 @@
-/*  $Id: utils.h,v 1.1.4.1 1999/08/29 18:28:34 olaf Exp $ */
+/*  $Id: utils.h,v 1.1.4.2 1999/10/24 10:40:22 olaf Exp $ */
 
 /*  GTris
  *  $Name:  $
@@ -19,11 +19,15 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef TYPES_H
-#define TYPES_H
+#ifndef UTILS_H
+#define UTILS_H
 
 #include <gdk/gdk.h>
 
+#include <gtk/gtkwidget.h>
+#include <gtk/gtklabel.h>
+#include <gtk/gtkbutton.h>
+#include <gtk/gtkaccelgroup.h>
 
 struct CPoint : public GdkPoint
 {
@@ -55,9 +59,20 @@ inline bool operator!= (const GdkColor& cl1, const GdkColor& cl2)
     return !(cl1==cl2); 
 }
 
-
-
 GdkColor RGB(gushort r, gushort g, gushort b);
+
+
+void connect_accelerator
+    (const char* label_text,
+     GtkLabel* label_widget,
+     GtkWidget* target,
+     const char* signal,
+     GtkAccelGroup* accel_group);
+
+void connect_button_accelerator
+    (GtkButton* button,
+     const char* label_text,
+     GtkAccelGroup* accel_group);
 
 
 #endif

@@ -1,4 +1,4 @@
-/*  $Id: options.cc,v 1.4.2.2 1999/10/17 09:30:12 olaf Exp $ */
+/*  $Id: options.cc,v 1.4.2.3 1999/10/24 10:40:22 olaf Exp $ */
 
 /*  GTris
  *  $Name:  $
@@ -20,7 +20,9 @@
  */
 
 #include "options.h"
+#include "utils.h"
 #include <gtk/gtk.h>
+#include <gdk/gdkkeysyms.h>
 #include <stdio.h>
 
 
@@ -31,43 +33,6 @@ static void on_btnCancel_clicked (GtkWidget*, gpointer);
 static gint on_dlg_delete ( GtkWidget*, GdkEvent, gpointer );
 
 static bool m_bOK;
-
-
-void connect_accelerator
-    (const char* label_text,
-     GtkLabel* label_widget,
-     GtkWidget* target,
-     const char* signal,
-     GtkAccelGroup* accel_group)
-{
-    guint accel_key;
-    accel_key = gtk_label_parse_uline (label_widget,label_text);
-    gtk_widget_add_accelerator
-            (target, signal,
-             accel_group,
-             accel_key,
-             GDK_MOD1_MASK,
-             GTK_ACCEL_LOCKED);
-}
-
-
-void connect_button_accelerator
-    (GtkButton* button,
-     const char* label_text,
-     GtkAccelGroup* accel_group)
-{
-    guint accel_key;
-    GtkWidget* btn_label = gtk_label_new ("");
-    accel_key = gtk_label_parse_uline (GTK_LABEL(btn_label),label_text);
-    gtk_container_add (GTK_CONTAINER(button), btn_label);
-    gtk_widget_show (btn_label);
-    gtk_widget_add_accelerator
-            (GTK_WIDGET(button), "clicked",
-             accel_group,
-             accel_key,
-             GDK_MOD1_MASK,
-             GTK_ACCEL_LOCKED);
-}
 
 
 bool GetOptions (unsigned* level,
@@ -220,6 +185,19 @@ bool GetOptions (unsigned* level,
                         GTK_SIGNAL_FUNC (on_btnCancel_clicked),
                         NULL);
 
+    gtk_widget_add_accelerator
+            (m_btnOK, "clicked",
+             accel_group,
+             GDK_Return,
+             0,
+             GTK_ACCEL_LOCKED);
+
+    gtk_widget_add_accelerator
+            (m_btnCancel, "clicked",
+             accel_group,
+             GDK_Escape,
+             0,
+             GTK_ACCEL_LOCKED);
 
     GtkWidget* rb;
     switch (*colorRange)

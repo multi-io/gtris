@@ -1,4 +1,4 @@
-/*  $Id: utils.cc,v 1.1.4.1 1999/08/29 18:28:33 olaf Exp $ */
+/*  $Id: utils.cc,v 1.1.4.2 1999/10/24 10:40:22 olaf Exp $ */
 
 /*  GTris
  *  $Name:  $
@@ -32,3 +32,39 @@ GdkColor RGB(gushort r, gushort g, gushort b)
     return col;
 }
 
+
+void connect_accelerator
+    (const char* label_text,
+     GtkLabel* label_widget,
+     GtkWidget* target,
+     const char* signal,
+     GtkAccelGroup* accel_group)
+{
+    guint accel_key;
+    accel_key = gtk_label_parse_uline (label_widget,label_text);
+    gtk_widget_add_accelerator
+            (target, signal,
+             accel_group,
+             accel_key,
+             GDK_MOD1_MASK,
+             GTK_ACCEL_LOCKED);
+}
+
+
+void connect_button_accelerator
+    (GtkButton* button,
+     const char* label_text,
+     GtkAccelGroup* accel_group)
+{
+    guint accel_key;
+    GtkWidget* btn_label = gtk_label_new ("");
+    accel_key = gtk_label_parse_uline (GTK_LABEL(btn_label),label_text);
+    gtk_container_add (GTK_CONTAINER(button), btn_label);
+    gtk_widget_show (btn_label);
+    gtk_widget_add_accelerator
+            (GTK_WIDGET(button), "clicked",
+             accel_group,
+             accel_key,
+             GDK_MOD1_MASK,
+             GTK_ACCEL_LOCKED);
+}

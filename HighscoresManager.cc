@@ -1,4 +1,4 @@
-/*  $Id: HighscoresManager.cc,v 1.5.2.1 1999/08/29 18:28:31 olaf Exp $ */
+/*  $Id: HighscoresManager.cc,v 1.5.2.2 1999/10/24 10:40:21 olaf Exp $ */
 
 /*  GTris
  *  $Name:  $
@@ -23,8 +23,10 @@
 #include <stdio.h>
 #include <fstream>
 #include <algorithm>
+#include <gdk/gdkkeysyms.h>
 #include "HighscoresManager.h"
 #include "registry.h"
+#include "utils.h"
 
 
 THscEntry::THscEntry(const char* iname, unsigned iscore, unsigned ilines, int idate) :
@@ -112,10 +114,20 @@ HighscoresManager::HighscoresManager()
     m_dialog = GTK_DIALOG( gtk_dialog_new() );
     gtk_window_set_title ( GTK_WINDOW(m_dialog), "Highscores");
 
-    GtkButton* b = GTK_BUTTON( gtk_button_new_with_label("Close") );
+    GtkAccelGroup* accel_group = gtk_accel_group_new ();
+    gtk_accel_group_attach (accel_group, GTK_OBJECT (m_dialog));
+
+    GtkButton* b = GTK_BUTTON( gtk_button_new() );
+    connect_button_accelerator (b,"_Close",accel_group);
     gtk_container_add (GTK_CONTAINER(m_dialog->action_area), GTK_WIDGET(b));
     gtk_signal_connect (GTK_OBJECT(b), "clicked",
                         GTK_SIGNAL_FUNC(close_click), (gpointer)this);
+    gtk_widget_add_accelerator
+            (GTK_WIDGET(b), "clicked",
+             accel_group,
+             GDK_Escape,
+             0,
+             GTK_ACCEL_LOCKED);
     gtk_widget_show (GTK_WIDGET(b));
 
     m_notebook = GTK_NOTEBOOK( gtk_notebook_new() );

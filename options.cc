@@ -1,4 +1,4 @@
-/*  $Id: options.cc,v 1.4.2.3 1999/10/24 10:40:22 olaf Exp $ */
+/*  $Id: options.cc,v 1.4.2.3.2.1 2000/02/11 14:28:07 olaf Exp $ */
 
 /*  GTris
  *  $Name:  $
@@ -66,7 +66,7 @@ bool GetOptions (unsigned* level,
                         GTK_SIGNAL_FUNC (on_dlg_delete),
                         NULL);
     gtk_window_set_title (GTK_WINDOW (m_dialog), "Options");
-    gtk_window_set_policy (GTK_WINDOW (m_dialog), TRUE, TRUE, FALSE);
+    gtk_window_set_policy (GTK_WINDOW (m_dialog), FALSE, FALSE, FALSE);
 
     GtkAccelGroup* accel_group = gtk_accel_group_new ();
     gtk_accel_group_attach (accel_group, GTK_OBJECT (m_dialog));

@@ -1,4 +1,4 @@
-/*  $Id: HighscoresManager.cc,v 1.5.2.2 1999/10/24 10:40:21 olaf Exp $ */
+/*  $Id: HighscoresManager.cc,v 1.5.2.2.2.1 2000/02/11 14:28:06 olaf Exp $ */
 
 /*  GTris
  *  $Name:  $
@@ -113,6 +113,7 @@ HighscoresManager::HighscoresManager()
 {
     m_dialog = GTK_DIALOG( gtk_dialog_new() );
     gtk_window_set_title ( GTK_WINDOW(m_dialog), "Highscores");
+    gtk_window_set_policy (GTK_WINDOW (m_dialog), FALSE, FALSE, FALSE);
 
     GtkAccelGroup* accel_group = gtk_accel_group_new ();
     gtk_accel_group_attach (accel_group, GTK_OBJECT (m_dialog));
@@ -374,7 +375,7 @@ bool HighscoresManager::HighscoresUserQuery (THscEntry* entry, int level)
 
     m_dlgHighscores = gtk_dialog_new ();
     gtk_window_set_title (GTK_WINDOW (m_dlgHighscores), "Congratulations!");
-    gtk_window_set_policy (GTK_WINDOW (m_dlgHighscores), TRUE, TRUE, FALSE);
+    gtk_window_set_policy (GTK_WINDOW (m_dlgHighscores), FALSE, FALSE, FALSE);
 
     dialog_vbox2 = GTK_DIALOG (m_dlgHighscores)->vbox;
     gtk_widget_show (dialog_vbox2);

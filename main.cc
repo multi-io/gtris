@@ -1,4 +1,4 @@
-/*  $Id: main.cc,v 1.6.2.2.2.1 2000/01/30 04:22:29 olaf Exp $ */
+/*  $Id: main.cc,v 1.6.2.2.2.2 2000/02/11 14:28:06 olaf Exp $ */
 
 /*  GTris
  *  $Name:  $
@@ -146,7 +146,7 @@ int main (int argc, char* argv[])
     if ( !registry.QueryValue ("HscFile", m_HscFile) )
     {
         m_HscFile = g_get_home_dir();
-        m_HscFile += "/.gtris/hscores.bin";
+        m_HscFile += "/.gtrisscores.bin";
     }
 
     if ( !registry.QueryValue ("HscUserName", m_HscUserName) )
@@ -159,6 +159,8 @@ int main (int argc, char* argv[])
     m_mainwnd = gtk_window_new (GTK_WINDOW_TOPLEVEL);
 
     gtk_window_set_title (GTK_WINDOW(m_mainwnd),"GTris");
+
+    gtk_window_set_policy (GTK_WINDOW (m_mainwnd), FALSE, FALSE, FALSE);
 
     gtk_signal_connect (GTK_OBJECT (m_mainwnd),
                         "delete_event",
@@ -530,6 +532,7 @@ static void OnHelpAbout()
 {
     aboutbox = GTK_DIALOG( gtk_dialog_new() );
     gtk_window_set_title ( GTK_WINDOW(aboutbox), "About GTris");
+    gtk_window_set_policy (GTK_WINDOW (aboutbox), FALSE, FALSE, FALSE);
     gtk_widget_realize (GTK_WIDGET(aboutbox));
 
     GtkAccelGroup* accel_group = gtk_accel_group_new ();

@@ -1,4 +1,4 @@
-/*  $Id: msgbox.cc,v 1.3.4.3 1999/10/24 10:40:22 olaf Exp $ */
+/*  $Id: msgbox.cc,v 1.3.4.3.2.1 2000/02/11 14:28:07 olaf Exp $ */
 
 /*  GTris
  *  $Name:  $
@@ -50,6 +50,7 @@ int MsgBox (const char* title, const char* msg, int btns)
 {
     m_dialog = GTK_DIALOG( gtk_dialog_new() );
     gtk_window_set_title ( GTK_WINDOW(m_dialog), title);
+    gtk_window_set_policy (GTK_WINDOW (m_dialog), FALSE, FALSE, FALSE);
 
     GtkAccelGroup* accel_group = gtk_accel_group_new ();
     gtk_accel_group_attach (accel_group, GTK_OBJECT (m_dialog));

@@ -64,7 +64,7 @@ static void gtk_brick_viewer_init (GtkBrickViewer* bv)
 }
 
 
-GtkWidget* gtk_brick_viewer_new (int cols, int rows, int BrickSize)
+GtkWidget* gtk_brick_viewer_new (unsigned cols, unsigned rows, unsigned BrickSize)
 {
     GtkBrickViewer* bv = (GtkBrickViewer*) gtk_type_new(gtk_brick_viewer_get_type ());
 
@@ -103,13 +103,13 @@ static void gtk_brick_viewer_destroy (GtkObject *object)
 
 
 
-int gtk_brick_viewer_GetRows (GtkBrickViewer* bv)
+unsigned gtk_brick_viewer_GetRows (GtkBrickViewer* bv)
 { return bv->m_Rows; }
 
-int gtk_brick_viewer_GetCols (GtkBrickViewer* bv)
+unsigned gtk_brick_viewer_GetCols (GtkBrickViewer* bv)
 { return bv->m_Cols; }
 
-int gtk_brick_viewer_GetBrickSize (GtkBrickViewer* bv)
+unsigned gtk_brick_viewer_GetBrickSize (GtkBrickViewer* bv)
 { return bv->m_BrickSize; }
 
 GdkColor gtk_brick_viewer_GetBrickColor (GtkBrickViewer* bv, int col, int row)
@@ -139,8 +139,10 @@ void gtk_brick_viewer_FreeRect (GdkColor** rect, int height)
 }
 
 
-void gtk_brick_viewer_SetBrickSize (GtkBrickViewer* bv, int s)
+void gtk_brick_viewer_SetBrickSize (GtkBrickViewer* bv, unsigned s)
 {
+    if (s==0) return;
+
     bv->m_BrickSize = s;
 
     GtkWidget* widget = GTK_WIDGET(bv);

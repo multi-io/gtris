@@ -22,7 +22,7 @@ typedef struct _GtkBrickViewerClass   GtkBrickViewerClass;
 struct _GtkBrickViewer
 {
     GtkWidget widget;
-    int m_Cols, m_Rows, m_BrickSize;
+    unsigned m_Cols, m_Rows, m_BrickSize;
 
     GdkColor** m_Contents;
 };
@@ -33,14 +33,14 @@ struct _GtkBrickViewerClass
 };
 
 
-GtkWidget*     gtk_brick_viewer_new                    (int cols, int rows, int BrickSize);
+GtkWidget* gtk_brick_viewer_new (unsigned cols, unsigned rows, unsigned BrickSize);
 
-guint          gtk_brick_viewer_get_type               ();
+guint gtk_brick_viewer_get_type ();
 
-int gtk_brick_viewer_GetRows (GtkBrickViewer* bv);
-int gtk_brick_viewer_GetCols (GtkBrickViewer* bv);
-int gtk_brick_viewer_GetBrickSize (GtkBrickViewer* bv);
-void gtk_brick_viewer_SetBrickSize (GtkBrickViewer* bv, int s);
+unsigned gtk_brick_viewer_GetRows (GtkBrickViewer* bv);
+unsigned gtk_brick_viewer_GetCols (GtkBrickViewer* bv);
+unsigned gtk_brick_viewer_GetBrickSize (GtkBrickViewer* bv);
+void gtk_brick_viewer_SetBrickSize (GtkBrickViewer* bv, unsigned s);
 
 GdkColor gtk_brick_viewer_GetBrickColor (GtkBrickViewer* bv, int col, int row);
 void gtk_brick_viewer_SetBrickColor (GtkBrickViewer* bv, GdkColor color, int col, int row);

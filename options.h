@@ -4,7 +4,10 @@
 #include <string>
 #include "TetrisGameProcess.h"
 
-bool GetOptions (int* level, std::string* hscfile, CTetrisGameProcess::StoneColorRange* colorRange);
+bool GetOptions (unsigned* level,
+                 std::string* hscfile,
+                 CTetrisGameProcess::StoneColorRange* colorRange,
+                 unsigned* brickSize);
 
 
 #endif

@@ -12,13 +12,15 @@
 struct THscEntry
 {
     THscEntry() {}
-    THscEntry(const char* name, int score, int lines, int date);
+    THscEntry(const char* name, unsigned score, unsigned lines, int date);
     THscEntry(const THscEntry& e);
     std::string name;
-    int score,lines;
+    unsigned score,lines;
     time_t date;
     bool operator< (const THscEntry& e2) const;
     bool operator== (const THscEntry& e2) const;
+    friend ostream& operator<< (ostream&, const THscEntry&);
+    friend istream& operator>> (istream&, THscEntry&);
 };
 
 typedef std::vector <THscEntry> THscList;

@@ -6,6 +6,7 @@
 #include <strstream>
 #include <algorithm>
 
+#include <iostream>
 
 class Registry
 {
@@ -19,22 +20,32 @@ public:
     ~Registry ();
 
     template <class T>
-        bool QueryValue (const char* key, T& result) const
+    bool QueryValue (const char* key, T& result) const
     {
         map_type::const_iterator it = m_ValuesMap.find(key);
         if (it == m_ValuesMap.end())
             return false;
         istrstream ss (it->second.c_str(),it->second.size());
         ss >> result;
+        return !ss.fail();
+    }
+
+    bool QueryValue (const char* key, std::string& result) const
+    {
+        map_type::const_iterator it = m_ValuesMap.find(key);
+        if (it == m_ValuesMap.end())
+            return false;
+        result = it->second.c_str();
         return true;
     }
 
-
     template <class T>
-        bool SetValue (const char* key, const T& value)
+    bool SetValue (const char* key, const T& value)
     {
+        cout << "generic SetValue" << endl;
         ostrstream ss;
         ss << value << '\0';
+        if (ss.fail()) return false;
         m_ValuesMap[key] = ss.str();
         return true;
     }

@@ -6,7 +6,7 @@
 #include "registry.h"
 
 
-THscEntry::THscEntry(const char* iname, int iscore, int ilines, int idate) :
+THscEntry::THscEntry(const char* iname, unsigned iscore, unsigned ilines, int idate) :
     name(iname), score(iscore), lines(ilines), date(idate)
 {
 }
@@ -31,6 +31,42 @@ bool THscEntry::operator< (const THscEntry& e2) const
 bool THscEntry::operator== (const THscEntry& e2) const
 {
     return (score==e2.score) && (lines == e2.lines);
+}
+
+ostream& operator<< (ostream& os, const THscEntry& e)
+{
+    size_t s = e.name.length();
+    os.write ((char*)&s,sizeof(s));
+    os.write (e.name.c_str(), s);
+    os.write ((char*)&(e.score), sizeof(e.score));
+    os.write ((char*)&(e.lines), sizeof(e.lines));
+    os.write ((char*)&(e.date), sizeof(e.date));
+
+    return os;
+}
+
+
+istream& operator>> (istream& is, THscEntry& e)
+{
+    size_t s;
+    is.read ((char*)&s,sizeof(s));
+    if (s > 1000)
+    {
+        is.set(ios::failbit);
+        return is;
+    }
+
+    char* buf = new char[s+1];
+    is.read (buf,s);
+    buf[s] = '\0';
+    e.name = buf;
+    delete[] buf;
+
+    is.read ((char*)&(e.score),sizeof(e.score));
+    is.read ((char*)&(e.lines),sizeof(e.lines));
+    is.read ((char*)&(e.date),sizeof(e.date));
+
+    return is;
 }
 
 
@@ -187,15 +223,6 @@ int HighscoresManager::GetLeastScore (int iLevel) const
 
 bool HighscoresManager::LoadFromFile (const char* file)
 {
-    struct
-    {
-        char name[20];
-        int score,lines;
-        time_t date;
-    }
-    FileEntry;
-
-
     ifstream fs (file,ios::in|ios::binary|ios::nocreate);
 
     if (!fs.rdbuf()->is_open())
@@ -213,16 +240,10 @@ bool HighscoresManager::LoadFromFile (const char* file)
         THscList& list = hsclists[iLvl];
         for (int i=0; i<EntrCnt; i++)
         {
-            fs.read ((char*)&FileEntry,sizeof(FileEntry));
-            if (strlen(FileEntry.name) >= 20 ||
-                FileEntry.score < 0 ||
-                FileEntry.lines < 0 ||
-                FileEntry.date < 0)
+            THscEntry NewEntry;
+            fs >> NewEntry;
+            if (fs.fail())
                 return false;
-
-            THscEntry NewEntry
-                (FileEntry.name, FileEntry.score,
-                 FileEntry.lines, FileEntry.date);
             list.push_back (NewEntry);
         }
         std::sort (list.begin(), list.end());
@@ -231,7 +252,9 @@ bool HighscoresManager::LoadFromFile (const char* file)
     for (iLvl=0; iLvl < nLevels; iLvl++)
     {
         m_HscLists[iLvl].erase(m_HscLists[iLvl].begin(), m_HscLists[iLvl].end());
-        m_HscLists[iLvl].insert(m_HscLists[iLvl].begin(), hsclists[iLvl].begin(), hsclists[iLvl].end());
+        m_HscLists[iLvl].insert
+            (m_HscLists[iLvl].begin(),
+             hsclists[iLvl].begin(), hsclists[iLvl].end());
         UpdateList (iLvl);
     }
 
@@ -241,14 +264,6 @@ bool HighscoresManager::LoadFromFile (const char* file)
 
 bool HighscoresManager::SaveToFile (const char* file) const
 {
-    struct
-    {
-        char name[20];
-        int score,lines;
-        time_t date;
-    }
-    FileEntry;
-
     ofstream fs (file,ios::out|ios::binary);
     if (!fs.rdbuf()->is_open())
         return false;
@@ -261,12 +276,7 @@ bool HighscoresManager::SaveToFile (const char* file) const
 
         for (size_t i=0; i<s; i++)
         {
-            const THscEntry& entry = CurrList[i];
-            strcpy (FileEntry.name, entry.name.c_str());
-            FileEntry .score = entry.score;
-            FileEntry .lines = entry.lines;
-            FileEntry .date = entry.date;
-            fs.write ((char*)&FileEntry, sizeof(FileEntry ));
+            fs << CurrList[i];
         }
     }
 
@@ -336,79 +346,73 @@ bool HighscoresManager::HighscoresUserQuery (THscEntry* entry, int level)
     GtkWidget *btnCancel;
 
     m_dlgHighscores = gtk_dialog_new ();
-    gtk_object_set_data (GTK_OBJECT (m_dlgHighscores), "m_dlgHighscores", m_dlgHighscores);
     gtk_window_set_title (GTK_WINDOW (m_dlgHighscores), "Congratulations!");
     gtk_window_set_policy (GTK_WINDOW (m_dlgHighscores), TRUE, TRUE, FALSE);
 
     dialog_vbox2 = GTK_DIALOG (m_dlgHighscores)->vbox;
-    gtk_object_set_data (GTK_OBJECT (m_dlgHighscores), "dialog_vbox2", dialog_vbox2);
     gtk_widget_show (dialog_vbox2);
 
     table3 = gtk_table_new (5, 2, TRUE);
-    gtk_object_set_data (GTK_OBJECT (m_dlgHighscores), "table3", table3);
     gtk_widget_show (table3);
     gtk_box_pack_start (GTK_BOX (dialog_vbox2), table3, FALSE, FALSE, 0);
 
     label2 = gtk_label_new ("Score:");
-    gtk_object_set_data (GTK_OBJECT (m_dlgHighscores), "label2", label2);
     gtk_widget_show (label2);
     gtk_table_attach (GTK_TABLE (table3), label2, 0, 1, 1, 2,
-                      (GtkAttachOptions)GTK_EXPAND, (GtkAttachOptions)(GTK_EXPAND | GTK_FILL), 0, 0);
+                      (GtkAttachOptions)GTK_EXPAND,
+                      (GtkAttachOptions)(GTK_EXPAND | GTK_FILL), 0, 0);
 
     label3 = gtk_label_new ("Lines:");
-    gtk_object_set_data (GTK_OBJECT (m_dlgHighscores), "label3", label3);
     gtk_widget_show (label3);
     gtk_table_attach (GTK_TABLE (table3), label3, 0, 1, 2, 3,
-                      (GtkAttachOptions) GTK_EXPAND, (GtkAttachOptions) (GTK_EXPAND | GTK_FILL), 0, 0);
+                      (GtkAttachOptions) GTK_EXPAND,
+                      (GtkAttachOptions) (GTK_EXPAND | GTK_FILL), 0, 0);
 
     label1 = gtk_label_new ("Level:");
-    gtk_object_set_data (GTK_OBJECT (m_dlgHighscores), "label1", label1);
     gtk_widget_show (label1);
     gtk_table_attach (GTK_TABLE (table3), label1, 0, 1, 0, 1,
-                      (GtkAttachOptions) GTK_EXPAND, (GtkAttachOptions) (GTK_EXPAND | GTK_FILL), 0, 0);
+                      (GtkAttachOptions) GTK_EXPAND,
+                      (GtkAttachOptions) (GTK_EXPAND | GTK_FILL), 0, 0);
 
     lblLevel = gtk_label_new ("label5");
-    gtk_object_set_data (GTK_OBJECT (m_dlgHighscores), "lblLevel", lblLevel);
     gtk_widget_show (lblLevel);
     gtk_table_attach (GTK_TABLE (table3), lblLevel, 1, 2, 0, 1,
-                      (GtkAttachOptions) GTK_EXPAND, (GtkAttachOptions) (GTK_EXPAND | GTK_FILL), 0, 0);
+                      (GtkAttachOptions) GTK_EXPAND,
+                      (GtkAttachOptions) (GTK_EXPAND | GTK_FILL), 0, 0);
 
     lblScore = gtk_label_new ("label6");
-    gtk_object_set_data (GTK_OBJECT (m_dlgHighscores), "lblScore", lblScore);
     gtk_widget_show (lblScore);
     gtk_table_attach (GTK_TABLE (table3), lblScore, 1, 2, 1, 2,
-                      (GtkAttachOptions) GTK_EXPAND, (GtkAttachOptions) (GTK_EXPAND | GTK_FILL), 0, 0);
+                      (GtkAttachOptions) GTK_EXPAND,
+                      (GtkAttachOptions) (GTK_EXPAND | GTK_FILL), 0, 0);
 
     lblLines = gtk_label_new ("label7");
-    gtk_object_set_data (GTK_OBJECT (m_dlgHighscores), "lblLines", lblLines);
     gtk_widget_show (lblLines);
     gtk_table_attach (GTK_TABLE (table3), lblLines, 1, 2, 2, 3,
-                      (GtkAttachOptions) GTK_EXPAND, (GtkAttachOptions) (GTK_EXPAND | GTK_FILL), 0, 0);
+                      (GtkAttachOptions) GTK_EXPAND,
+                      (GtkAttachOptions) (GTK_EXPAND | GTK_FILL), 0, 0);
 
     entryName = gtk_entry_new ();
-    gtk_object_set_data (GTK_OBJECT (m_dlgHighscores), "entryName", entryName);
     gtk_widget_show (entryName);
     gtk_table_attach (GTK_TABLE (table3), entryName, 0, 2, 4, 5,
-                      (GtkAttachOptions) (GTK_EXPAND | GTK_FILL), (GtkAttachOptions) (GTK_EXPAND | GTK_FILL), 0, 0);
+                      (GtkAttachOptions) (GTK_EXPAND | GTK_FILL),
+                      (GtkAttachOptions) (GTK_EXPAND | GTK_FILL), 0, 0);
 
     label4 = gtk_label_new ("Name:");
-    gtk_object_set_data (GTK_OBJECT (m_dlgHighscores), "label4", label4);
     gtk_widget_show (label4);
     gtk_table_attach (GTK_TABLE (table3), label4, 0, 1, 3, 4,
-                      (GtkAttachOptions) GTK_EXPAND, (GtkAttachOptions) (GTK_EXPAND | GTK_FILL), 0, 0);
+                      (GtkAttachOptions) GTK_EXPAND,
+                      (GtkAttachOptions) (GTK_EXPAND | GTK_FILL), 0, 0);
 
     dialog_action_area2 = GTK_DIALOG (m_dlgHighscores)->action_area;
-    gtk_object_set_data (GTK_OBJECT (m_dlgHighscores), "dialog_action_area2", dialog_action_area2);
     gtk_widget_show (dialog_action_area2);
     gtk_container_border_width (GTK_CONTAINER (dialog_action_area2), 10);
 
     hbox1 = gtk_hbox_new (FALSE, 15);
-    gtk_object_set_data (GTK_OBJECT (m_dlgHighscores), "hbox1", hbox1);
     gtk_widget_show (hbox1);
     gtk_box_pack_start (GTK_BOX (dialog_action_area2), hbox1, TRUE, TRUE, 0);
 
     btnOK = gtk_button_new_with_label ("OK");
-    gtk_object_set_data (GTK_OBJECT (m_dlgHighscores), "btnOK", btnOK);
     gtk_widget_show (btnOK);
     gtk_box_pack_start (GTK_BOX (hbox1), btnOK, TRUE, TRUE, 0);
     gtk_signal_connect (GTK_OBJECT (btnOK), "clicked",
@@ -416,7 +420,6 @@ bool HighscoresManager::HighscoresUserQuery (THscEntry* entry, int level)
                         btnOK);
 
     btnCancel = gtk_button_new_with_label ("Cancel");
-    gtk_object_set_data (GTK_OBJECT (m_dlgHighscores), "btnCancel", btnCancel);
     gtk_widget_show (btnCancel);
     gtk_box_pack_start (GTK_BOX (hbox1), btnCancel, TRUE, TRUE, 0);
     gtk_signal_connect (GTK_OBJECT (btnCancel), "clicked",

@@ -301,6 +301,7 @@ bool CTetrisGameProcess::StepForth ()
                     *((&c.red)+rand()*3/(RAND_MAX+1)) = 0xffff;
                 break;
                 */
+            default:
             case scrBasic:
                 c = m_basiccols[rand()/20*m_nbasiccols/(RAND_MAX/20+1)];
                 break;

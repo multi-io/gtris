@@ -76,31 +76,37 @@ static void OnGameExit()
 
 static GtkWidget* m_mainwnd;
 
-
 int main (int argc, char* argv[])
 {
     gtk_init (&argc,&argv);
 
     m_pHighscoresManager = new HighscoresManager;
 
-    m_bvPlayField = GTK_BRICK_VIEWER(gtk_brick_viewer_new (PlayFieldSize.x,PlayFieldSize.y,15));
-    m_bvNextField = GTK_BRICK_VIEWER(gtk_brick_viewer_new (NextFieldSize.x,NextFieldSize.y,15));
-
-    m_pGameProcess = new CTetrisGameProcess (m_bvPlayField, m_bvNextField);
-
     GamePaused = false;
     m_Level =  m_NewLevel = 0;
 
-    int regbuffer;
+    unsigned regbuffer;
 
     if ( registry.QueryValue ("Level", regbuffer) )
         if (regbuffer <= 4)
             m_Level = m_NewLevel = regbuffer;
 
+    unsigned bs = 15;
+    if ( registry.QueryValue ("BrickSize", regbuffer) )
+        if (regbuffer <= 100)
+            bs = regbuffer;
+
+    m_bvPlayField = 
+        GTK_BRICK_VIEWER(gtk_brick_viewer_new (PlayFieldSize.x,PlayFieldSize.y,bs));
+    m_bvNextField =
+        GTK_BRICK_VIEWER(gtk_brick_viewer_new (NextFieldSize.x,NextFieldSize.y,bs));
+
+    m_pGameProcess = new CTetrisGameProcess (m_bvPlayField, m_bvNextField);
+
+    m_pGameProcess->m_StoneColorRange = CTetrisGameProcess::scrBasic;
     if ( registry.QueryValue ("StoneColorRange", regbuffer) )
         m_pGameProcess->m_StoneColorRange = (CTetrisGameProcess::StoneColorRange)regbuffer;
 
-    m_pGameProcess->m_StoneColorRange = CTetrisGameProcess::scrBasic;
 
     if ( !registry.QueryValue ("HscFile", m_HscFile) )
     {
@@ -119,8 +125,14 @@ int main (int argc, char* argv[])
 
     gtk_window_set_title (GTK_WINDOW(m_mainwnd),"GTris");
 
-    gtk_signal_connect (GTK_OBJECT (m_mainwnd), "delete_event", GTK_SIGNAL_FUNC (delete_wnd_event), NULL);
-    gtk_signal_connect (GTK_OBJECT(m_mainwnd), "destroy", GTK_SIGNAL_FUNC(destroy_wnd_event), NULL);
+    gtk_signal_connect (GTK_OBJECT (m_mainwnd),
+                        "delete_event",
+                        GTK_SIGNAL_FUNC (delete_wnd_event),
+                        NULL);
+    gtk_signal_connect (GTK_OBJECT(m_mainwnd),
+                        "destroy",
+                        GTK_SIGNAL_FUNC(destroy_wnd_event),
+                        NULL);
 
     GtkVBox* main_vbox = GTK_VBOX(gtk_vbox_new (FALSE, 1));
     gtk_container_border_width (GTK_CONTAINER(main_vbox), 1);
@@ -153,7 +165,10 @@ int main (int argc, char* argv[])
     gtk_box_pack_start (GTK_BOX(centerBox),sep,TRUE,TRUE,0);
     gtk_box_pack_start (GTK_BOX(centerBox),GTK_WIDGET(m_bvNextField),TRUE,TRUE,0);
 
-    gtk_signal_connect (GTK_OBJECT(m_mainwnd), "key_press_event", GTK_SIGNAL_FUNC(OnKeyPressed), NULL);
+    gtk_signal_connect (GTK_OBJECT(m_mainwnd),
+                        "key_press_event",
+                        GTK_SIGNAL_FUNC(OnKeyPressed),
+                        NULL);
 
     gtk_widget_show (GTK_WIDGET(m_bvPlayField));
     gtk_widget_show (GTK_WIDGET(m_bvNextField));
@@ -174,9 +189,10 @@ int main (int argc, char* argv[])
     delete m_pHighscoresManager;
 
     registry.SetValue ("Level", m_Level);
-    registry.SetValue ("StoneColorRange", (int)m_pGameProcess->m_StoneColorRange);
+    registry.SetValue ("StoneColorRange", (unsigned)m_pGameProcess->m_StoneColorRange);
     registry.SetValue ("HscFile", m_HscFile);
     registry.SetValue ("HscUserName", m_HscUserName);
+    registry.SetValue ("BrickSize", gtk_brick_viewer_GetBrickSize (m_bvPlayField));
 
     return 0;
 }
@@ -201,6 +217,7 @@ static void OnGameRun();
 static void OnGamePause();
 static void OnViewHighscores();
 static void OnOptionsGameOptions();
+static void OnOptionsLevel (GtkWidget*, unsigned* pLevel);
 
 static void OnTest1();
 
@@ -208,7 +225,7 @@ static GtkMenuItem* m_mniGameNew;
 static GtkMenuItem* m_mniGameRun;
 static GtkMenuItem* m_mniGameStop;
 static GtkMenuItem* m_mniGamePause;
-static GtkCheckMenuItem* m_mniViewHighscores;
+static GtkMenuItem* m_mniViewHighscores;
 
 struct ToolbarItem
 {
@@ -256,7 +273,7 @@ static GtkItemFactoryEntry menu_items[] = {
   { "/Game/",  (char*)NULL,  NULL, 0, "<Separator>" },
   { "/Game/E_xit",  "<alt>F4",  (GtkItemFactoryCallback)OnGameExit, 0, NULL },
   { "/_View",        (char*)NULL,  NULL, 0, "<Branch>" },
-  { "/View/_Highscores",  (char*)NULL,  (GtkItemFactoryCallback)OnViewHighscores, 0, "<ToggleItem>" },
+  { "/View/_Highscores",  (char*)NULL,  (GtkItemFactoryCallback)OnViewHighscores, 0, NULL },
   { "/_Options",        (char*)NULL,  NULL, 0, "<Branch>" },
   { "/Options/_Game Options",  (char*)NULL,  (GtkItemFactoryCallback)OnOptionsGameOptions, 0, NULL },
   { "/_Test",        (char*)NULL,  NULL, 0, "<Branch>" },
@@ -279,7 +296,7 @@ static void CreateMenuAndToolbar( GtkWidget  *window, GtkWidget **menubar, GtkWi
                                          accel_group);
     gtk_item_factory_create_items (item_factory, nmenu_items, menu_items, NULL);
     gtk_accel_group_attach (accel_group, GTK_OBJECT (window));
-           
+
     m_mniGameNew =
         GTK_MENU_ITEM( gtk_item_factory_get_widget (item_factory, "/Game/New") );
     m_mniGameRun =
@@ -289,7 +306,40 @@ static void CreateMenuAndToolbar( GtkWidget  *window, GtkWidget **menubar, GtkWi
     m_mniGamePause =
         GTK_MENU_ITEM( gtk_item_factory_get_widget (item_factory, "/Game/Pause") );
     m_mniViewHighscores =
-        GTK_CHECK_MENU_ITEM( gtk_item_factory_get_widget (item_factory, "/View/Highscores") );
+        GTK_MENU_ITEM( gtk_item_factory_get_widget (item_factory, "/View/Highscores") );
+
+
+    static unsigned levels[nLevels];
+    GtkMenu* om = GTK_MENU( gtk_item_factory_get_widget (item_factory,"/Options") );
+    GtkWidget* sep = gtk_menu_item_new();
+    gtk_widget_show (sep);
+    gtk_menu_append (om,sep);
+    for (int i=0; i<nLevels; i++)
+    {
+        levels[i] = i;
+
+        GtkWidget* mni = gtk_menu_item_new ();
+
+        GtkWidget* lbl = gtk_label_new ("");
+        gtk_misc_set_alignment (GTK_MISC(lbl),0,0);
+        gtk_container_add (GTK_CONTAINER(mni),lbl);
+        gtk_widget_show (lbl);
+        char buf[10];
+        sprintf (buf,"Level _%i",i);
+        guint accel_key = gtk_label_parse_uline (GTK_LABEL(lbl), buf);
+        gtk_widget_add_accelerator
+            (mni, "activate_item",
+             (GtkAccelGroup*)(gtk_accel_groups_from_object (GTK_OBJECT(om)) ->data),
+             accel_key,
+             0, GTK_ACCEL_LOCKED);
+
+        gtk_widget_show (mni);
+        gtk_menu_append (om,mni);
+        gtk_signal_connect (GTK_OBJECT (mni),
+                            "activate",
+                            GTK_SIGNAL_FUNC (OnOptionsLevel),
+                            (gpointer) (levels+i));
+    }
 
     *menubar = gtk_item_factory_get_widget (item_factory, "<main>");
 
@@ -337,7 +387,8 @@ static void OnGameNew(void)
     if (timer_installed)
         gtk_timeout_remove (timeout_tag);
     m_Level = m_NewLevel;
-    timeout_tag = gtk_timeout_add (55 * (5 - m_Level), OnTimeout, NULL);
+    UpdateLevelDisplay();
+    timeout_tag = gtk_timeout_add (55 * (nLevels+1 - m_Level), OnTimeout, NULL);
     timer_installed = true;
     m_pGameProcess->StartNewGame ();
     UpdateItems ();
@@ -366,7 +417,8 @@ static void OnGameRun()
         if (timer_installed)
             gtk_timeout_remove (timeout_tag);
         m_Level = m_NewLevel;
-        timeout_tag = gtk_timeout_add (55 * (5 - m_Level), OnTimeout, NULL);
+        UpdateLevelDisplay();
+        timeout_tag = gtk_timeout_add (55 * (nLevels+1 - m_Level), OnTimeout, NULL);
         timer_installed = true;
         m_pGameProcess->StartNewGame ();
     }
@@ -388,23 +440,39 @@ static void OnViewHighscores()
 
 static void OnOptionsGameOptions() 
 {
-    int level = m_Level;
+    unsigned level = m_Level;
     CTetrisGameProcess::StoneColorRange scr = m_pGameProcess->m_StoneColorRange;
     string hscfile = m_HscFile;
+    unsigned bs = gtk_brick_viewer_GetBrickSize (m_bvPlayField);
 
-    if (GetOptions (&level, &hscfile, &scr))
+    if (GetOptions (&level, &hscfile, &scr, &bs))
     {
         m_NewLevel = level;
         if (!m_pGameProcess->IsGameRunning ())
             m_Level = m_NewLevel;
+        UpdateLevelDisplay();
         m_pGameProcess->m_StoneColorRange = scr;
         if (m_HscFile != hscfile)
         {
             m_HscFile = hscfile;
             m_pHighscoresManager->LoadFromFile (m_HscFile.c_str());
         }
-        UpdateLevelDisplay();
+        gtk_brick_viewer_SetBrickSize (m_bvPlayField,bs);
+        gtk_brick_viewer_SetBrickSize (m_bvNextField,bs);
+        GtkRequisition r;
+        gtk_signal_emit_by_name (GTK_OBJECT (m_mainwnd), "size_request",&r);
+        gtk_widget_set_usize (m_mainwnd,r.width,r.height);
+        gdk_window_resize (m_mainwnd->window,r.width,r.height);
     }
+}
+
+
+static void OnOptionsLevel (GtkWidget*, unsigned* pLevel)
+{
+    m_NewLevel = *pLevel;
+    if (!m_pGameProcess->IsGameRunning ())
+        m_Level = m_NewLevel;
+    UpdateLevelDisplay();
 }
 
 
@@ -567,4 +635,6 @@ static void OnTest1()
 
     XGetWindowAttributes (priv->xdisplay, priv->xwindow, &wattr);
     printf ("Von XGetWindowAttributes gelieferte Position: x=%i y=%i\n",wattr.x,wattr.y);
+
+    gtk_menu_item_activate (GTK_MENU_ITEM(m_mniViewHighscores));
 }

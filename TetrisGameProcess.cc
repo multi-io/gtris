@@ -3,8 +3,6 @@
 #include <gdk/gdkkeysyms.h>
 #include "TetrisGameProcess.h"
 
-#include <stdio.h>    //TODO: nur fuer Debugging
-
 
 #define no_shapes 7
 static struct stone_shape
@@ -256,10 +254,6 @@ void CTetrisGameProcess::StepForth ()
                 current_stone.shape = *next_shape; /* -> Flugstein-Form = next-Form setzen */
                 next_shape =  shape_avail + (rand()/20-1) * no_shapes / (RAND_MAX/20); /* und nur next-Form */
             }                                   /* zufaellig erzeugen */
-
-            if (next_shape-shape_avail >= no_shapes)       //TODO: nur fuer Debugging
-                printf ("wuaaaa...\n");
-
 
             //Next-Feld neu zeichnen
             gtk_brick_viewer_FillAll (m_bvNextField,CL_BLACK);

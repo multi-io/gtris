@@ -1,39 +1,66 @@
-C++ = egcs
-C++OPTS = -g
+CXX = egcs
 INCDIRS = -I/usr/lib/glib/include
 LIBDIRS = -L/usr/X11R6/lib
+
 LIBS = -lgdk -lgtk -lglib -lXext -lX11 -lm -lstdc++ # `gtk-config --libs`
-OBJECTS = main.o gtkbrickviewer.o TetrisGameProcess.o types.o registry.o HighscoresManager.o options.o msgbox.o
+OBJECTS = main.o gtkbrickviewer.o TetrisGameProcess.o types.o registry.o HighscoresManager.o options.o msgbox.o xpms.o
+
+default: release
+
+debug:
+	$(MAKE) gtris CXXFLAGS=-g
+
+release:
+	$(MAKE) gtris CXXFLAGS=-O2
+	strip gtris
+
+%.o : %.cc
+	$(CXX) -c $(CXXFLAGS) $(INCDIRS) $< -o $@
+
+XPMS = new.xpm run.xpm stop.xpm pause.xpm highscores.xpm options.xpm
+
+xpms.cc : $(XPMS)
+	@echo generating xpms.cc ...;                                        \
+	(                                                                    \
+	echo '/* xpms.cc : automatically generated source file containing';  \
+	echo ' * all XPM pictures needed by gtris';                          \
+	echo ' */';                                                          \
+	for xpm in $^; do                                                    \
+	    echo;                                                            \
+	    echo;                                                            \
+	    echo char\* `basename $$xpm .xpm`_xpm [] =;                      \
+	    echo {;                                                          \
+	    cat $$xpm | grep -Ev '/\*|\*/|\{|\}|static';                     \
+	    echo }\;;                                                        \
+	done                                                                 \
+	) >xpms.cc
+
+xpms.h :
+	@echo generating xpms.h ...;                                         \
+	(                                                                    \
+	echo '/* xpms.h : automatically generated header file';              \
+	echo ' * for xpms.cc';                                               \
+	echo ' */';                                                          \
+	echo;                                                                \
+	for xpm in $(XPMS); do                                               \
+	    echo extern char\* `basename $$xpm .xpm`_xpm []\;;               \
+	done                                                                 \
+	) >xpms.h
 
 
-gtris: ${OBJECTS}
-	${C++} ${OBJECTS} ${LIBDIRS} ${LIBS} -o gtris
+gtris: $(OBJECTS)
+	$(CXX) $(OBJECTS) $(LIBDIRS) $(LIBS) -o gtris
 
-main.o: main.cc gtkbrickviewer.h TetrisGameProcess.h types.h registry.h HighscoresManager.h options.h
-	${C++} -c ${C++OPTS} ${INCDIRS} main.cc -o main.o
-
-gtkbrickviewer.o: gtkbrickviewer.cc gtkbrickviewer.h types.h
-	${C++} -c ${C++OPTS} ${INCDIRS} gtkbrickviewer.cc -o gtkbrickviewer.o
-
-TetrisGameProcess.o: TetrisGameProcess.cc TetrisGameProcess.h gtkbrickviewer.h types.h
-	${C++} -c ${C++OPTS} ${INCDIRS} TetrisGameProcess.cc -o TetrisGameProcess.o
-
-types.o: types.cc types.h
-	${C++} -c ${C++OPTS} ${INCDIRS} types.cc -o types.o
-
-registry.o: registry.cc registry.h
-	${C++} -c ${C++OPTS} ${INCDIRS} registry.cc -o registry.o
-
-HighscoresManager.o: HighscoresManager.cc HighscoresManager.h registry.h
-	${C++} -c ${C++OPTS} ${INCDIRS} HighscoresManager.cc -o HighscoresManager.o
-
-options.o: options.cc options.h TetrisGameProcess.h
-	${C++} -c ${C++OPTS} ${INCDIRS} options.cc -o options.o
-
-msgbox.o: msgbox.cc msgbox.h
-	${C++} -c ${C++OPTS} ${INCDIRS} msgbox.cc -o msgbox.o
+gtkbrickviewer.o main.o TetrisGameProcess.o types.o: types.h
+HighscoresManager.o main.o registry.o: registry.h
+main.o options.o TetrisGameProcess.o: TetrisGameProcess.h
+main.o msgbox.o: msgbox.h
+main.o options.o: options.h
+gtkbrickviewer.o main.o: gtkbrickviewer.h
+HighscoresManager.o main.o: HighscoresManager.h
+main.o: xpms.h
 
 
 .PHONY: clean
 clean:
-	rm -f ${OBJECTS} gtris
+	rm -f $(OBJECTS) xpms.cc xpms.h gtris

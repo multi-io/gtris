@@ -30,6 +30,7 @@ class HighscoresManager
 
     GtkDialog* m_dialog;
     GtkCList* m_CLists[nLevels];
+    GtkNotebook* m_notebook;
 
     void UpdateList (int iLevel);
 
@@ -37,14 +38,14 @@ public:
     HighscoresManager();
     ~HighscoresManager();
 
-    void AddNewEntry (THscEntry& entry, int iLevel);
+    void AddNewEntry (const THscEntry& entry, int iLevel);
     int GetLeastScore (int iLevel) const;
 
-    bool LoadFromFile (const std::string& file);
-    bool SaveToFile (const std::string& file) const;
+    bool LoadFromFile (const char* file);
+    bool SaveToFile (const char* file) const;
 
     void ShowDialog (bool bShow = true);
-    bool IsDialogVisible ();
+    bool IsDialogVisible () const;
 
     static bool HighscoresUserQuery (THscEntry* entry, int level);
 };

@@ -1,8 +1,6 @@
 #ifndef MSGBOX_H
 #define MSGBOX_H
 
-#include <string>
-
 const MB_OK = 1;
 const MB_CANCEL = 2;
 const MB_YES = 4;

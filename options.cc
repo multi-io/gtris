@@ -16,12 +16,15 @@ static GtkSpinButton* m_spbtnLevel;
 
 static void ok_click (GtkWidget*, gpointer);
 static void cancel_click (GtkWidget*, gpointer);
+static gint on_dlg_delete ( GtkWidget*, GdkEvent, gpointer );
 
 static bool m_bOK;
 
 
 bool GetOptions (int* level, std::string* hscfile, CTetrisGameProcess::StoneColorRange* colorRange)
 {
+    printf ("GetOptions Anfang: %i\n",*level);
+
     m_dialog = GTK_DIALOG( gtk_dialog_new() );
     gtk_window_set_title ( GTK_WINDOW(m_dialog), "Options");
 
@@ -99,6 +102,8 @@ bool GetOptions (int* level, std::string* hscfile, CTetrisGameProcess::StoneColo
 
     gtk_spin_button_set_value (m_spbtnLevel,*level);
 
+    gtk_signal_connect (GTK_OBJECT (m_dialog), "delete_event",
+                        GTK_SIGNAL_FUNC (on_dlg_delete), NULL);
 
     gtk_widget_show (GTK_WIDGET(m_dialog));
 
@@ -120,7 +125,9 @@ bool GetOptions (int* level, std::string* hscfile, CTetrisGameProcess::StoneColo
 
     *level = gtk_spin_button_get_value_as_int (m_spbtnLevel);
 
-    //TODO: hier den dialog destroyen (wenn der Rest funktioniert)
+    gtk_widget_destroy (GTK_WIDGET(m_dialog));
+
+    printf ("GetOptions Ende: %i\n",*level);
 }
 
 
@@ -137,4 +144,10 @@ static void cancel_click (GtkWidget*, gpointer)
     m_bOK = false;
     gtk_widget_hide (GTK_WIDGET(m_dialog));
     gtk_main_quit();
+}
+
+
+static gint on_dlg_delete ( GtkWidget*, GdkEvent, gpointer )
+{
+    cancel_click (NULL,NULL);
 }

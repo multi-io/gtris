@@ -22,6 +22,8 @@ static GtkDialog* m_dialog;
 static void btn_click (GtkWidget*, gpointer p);
 const char** pClicked_label;
 
+static gint on_dlg_delete ( GtkWidget*, GdkEvent, gpointer );
+
 int MsgBox (const char* title, const char* msg, int btns)
 {
     m_dialog = GTK_DIALOG( gtk_dialog_new() );
@@ -49,13 +51,18 @@ int MsgBox (const char* title, const char* msg, int btns)
         gtk_widget_show (btn);
     }
 
+    gtk_signal_connect (GTK_OBJECT (m_dialog), "delete_event",
+                        GTK_SIGNAL_FUNC (on_dlg_delete), NULL);
+
     gtk_widget_show (GTK_WIDGET(m_dialog));
 
     gtk_grab_add (GTK_WIDGET(m_dialog));
     gtk_main ();
     gtk_grab_remove (GTK_WIDGET(m_dialog));
 
-    return twoPowX [ pClicked_label - btnLabels ];
+    gtk_widget_destroy (GTK_WIDGET(m_dialog));
+
+    return pClicked_label==NULL? 0 : twoPowX [ pClicked_label - btnLabels ];
 }
 
 
@@ -63,5 +70,12 @@ static void btn_click (GtkWidget*, gpointer p)
 {
     pClicked_label  = (const char**)p;
     gtk_widget_hide (GTK_WIDGET(m_dialog));
+    gtk_main_quit();
+}
+
+
+static gint on_dlg_delete ( GtkWidget*, GdkEvent, gpointer )
+{
+    pClicked_label  = NULL;
     gtk_main_quit();
 }

@@ -5,7 +5,7 @@ Release: 1
 Copyright: GPL
 Packager: Olaf Klischat <klischat@cs.tu-berlin.de>
 Group: Amusements/Games
-Source: http://user.cs.tu-berlin.de/~klischat/gtris-0.2.1.tar.gz
+Source: http://user.cs.tu-berlin.de/~klischat/gtris-@VERSION@.tar.gz
 BuildRoot: /tmp/%{name}-buildroot
 
 %description

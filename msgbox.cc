@@ -1,4 +1,4 @@
-/*  $Id: msgbox.cc,v 1.3.4.1 1999/08/29 18:28:33 olaf Exp $ */
+/*  $Id: msgbox.cc,v 1.3.4.2 1999/08/29 18:30:43 olaf Exp $ */
 
 /*  GTris
  *  $Name:  $
@@ -57,21 +57,16 @@ int MsgBox (const char* title, const char* msg, int btns)
     gtk_box_pack_start (GTK_BOX(m_dialog->vbox), msglabel, FALSE, TRUE, 10);
     gtk_widget_show (msglabel);
 
-    vector<const char**> labels;
-    int i;
-    for (i=0; i<nBtnTypes; i++)
+    for (int i=0; i<nBtnTypes; i++)
     {
         if (btns & twoPowX[i])
-            labels.push_back (&(btnLabels[i]));
-    }
-
-    for (i=0; i<labels.size(); i++)
-    {
-        GtkWidget* btn = gtk_button_new_with_label(*(labels[i]));
-        gtk_box_pack_start (GTK_BOX(m_dialog->action_area), btn, FALSE, TRUE, 0);
-        gtk_signal_connect (GTK_OBJECT(btn), "clicked",
-                            GTK_SIGNAL_FUNC(btn_click), (void*)(labels[i]));
-        gtk_widget_show (btn);
+        {
+            GtkWidget* btn = gtk_button_new_with_label(btnLabels[i]);
+            gtk_box_pack_start (GTK_BOX(m_dialog->action_area), btn, FALSE, TRUE, 0);
+            gtk_signal_connect (GTK_OBJECT(btn), "clicked",
+                                GTK_SIGNAL_FUNC(btn_click), (void*) &(btnLabels[i]));
+            gtk_widget_show (btn);
+        }
     }
 
     gtk_signal_connect (GTK_OBJECT (m_dialog), "delete_event",

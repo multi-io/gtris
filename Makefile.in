@@ -1,0 +1,104 @@
+#  $Id: Makefile.in,v 1.1.2.1 2000/01/29 05:50:27 olaf Exp $
+
+CXX = @CXX@
+LIBS = @LIBS@
+CXXFLAGS = @CXXFLAGS@
+CPPFLAGS = @CPPFLAGS@
+DEFS = @DEFS@
+
+prefix = @prefix@
+exec_prefix = @exec_prefix@
+bindir = @bindir@
+
+INSTALL = @INSTALL@
+INSTALL_PROGRAM = @INSTALL_PROGRAM@
+INSTALL_DATA = @INSTALL_DATA@
+
+REVISION = @REVISION@
+
+OBJECTS = \
+	main.o                \
+	gtkbrickviewer.o      \
+	TetrisGameProcess.o   \
+	utils.o               \
+	registry.o            \
+	HighscoresManager.o   \
+	options.o             \
+	msgbox.o              \
+	xpms.o
+
+all: $(OBJECTS)
+	$(CXX) $(OBJECTS) $(LIBS) -o gtris
+
+%.o: %.cc
+	$(CXX) -c $(CXXFLAGS) $(CPPFLAGS) $(DEFS) $< -o $@
+
+XPMS = new.xpm run.xpm stop.xpm pause.xpm highscores.xpm options.xpm
+
+xpms.cc: $(XPMS)
+	@echo generating xpms.cc ...; \
+	( \
+	echo '/* xpms.cc : automatically generated source file containing'; \
+	echo ' * all XPM pictures needed by gtris'; \
+	echo ' */'; \
+	for xpm in $(XPMS); do \
+	    echo; \
+	    echo; \
+	    echo char\* `basename $$xpm .xpm`_xpm [] =; \
+	    echo {; \
+	    cat $$xpm | egrep -v '/\*|\*/|\{|\}|static'; \
+	    echo }\;; \
+	done \
+	) >xpms.cc
+
+xpms.h:
+	@echo generating xpms.h ...; \
+	( \
+	echo '/* xpms.h : automatically generated header file'; \
+	echo ' * for xpms.cc'; \
+	echo ' */'; \
+	echo; \
+	for xpm in $(XPMS); do \
+	    echo extern char\* `basename $$xpm .xpm`_xpm []\;; \
+	done \
+	) >xpms.h
+
+
+ready_for_install:
+	@if [ ! -x gtris ]; then \
+	echo ERROR: executable \'gtris\' not found. Use \'make\' first. >&2; \
+	exit 1; \
+	fi;
+
+install: ready_for_install
+	$(INSTALL_PROGRAM) gtris $(bindir)/gtris;
+
+tgz distrib:
+	@DIRNAME=gtris-$(REVISION); \
+	TGZNAME=$${DIRNAME}.tar.gz; \
+	echo making $$TGZNAME ...; \
+	mkdir $$DIRNAME; \
+	rm -rf $$DIRNAME/*; \
+	cp *.cc *.h *.xpm configure configure.in revision install-sh \
+	   Makefile.in hscores.bin COPYING INSTALL $$DIRNAME/; \
+	rm -f $$DIRNAME/xpms.* 2>/dev/null; \
+	tar c $$DIRNAME/ | gzip >$$TGZNAME; \
+	rm -rf $$DIRNAME/
+
+.PHONY: clean
+clean:
+	rm -f $(OBJECTS) xpms.cc xpms.h gtris
+
+
+# DO NOT DELETE
+
+HighscoresManager.o: HighscoresManager.h registry.h utils.h
+TetrisGameProcess.o: TetrisGameProcess.h gtkbrickviewer.h utils.h
+gtkbrickviewer.o: gtkbrickviewer.h utils.h
+main.o: gtkbrickviewer.h utils.h TetrisGameProcess.h HighscoresManager.h
+main.o: options.h msgbox.h registry.h xpms.h
+msgbox.o: msgbox.h utils.h
+options.o: options.h TetrisGameProcess.h gtkbrickviewer.h utils.h
+registry.o: registry.h
+utils.o: utils.h
+xpms.cc: xpms.h

@@ -1,0 +1,63 @@
+dnl $Id: configure.in,v 1.1.2.1 2000/01/29 05:50:27 olaf Exp $
+dnl Process this file with autoconf to produce a configure script.
+AC_INIT(TetrisGameProcess.cc)
+
+dnl Checks for programs.
+AC_PROG_CXX
+AC_PROG_INSTALL
+
+AC_PROG_MAKE_SET
+
+dnl Checks for libraries.
+
+AM_PATH_GTK(1.1.0, , exit 1;)
+
+LIBS="$LIBS $GTK_LIBS";
+CPPFLAGS="$CPPFLAGS $GTK_CFLAGS";
+
+AC_CHECK_PROG(HAVE_GTKCONFIG, gtk-config, yes)
+
+AC_LANG_SAVE
+AC_LANG_CPLUSPLUS
+
+AC_MSG_CHECKING([checking whether C++-Compiler is ANSI-compliant (member templates/iostream libraries)])
+AC_TRY_COMPILE([
+#include <iostream>
+
+using namespace std;
+
+class mttest
+{
+public:
+    template <class T>
+    void output_value (const T& t) const
+    {
+        cout << t << endl;
+    }
+};
+],
+[
+   mttest mtt;
+   int i = 26172;
+   mtt.output_value (i);
+], AC_MSG_RESULT([yes]), AC_MSG_RESULT([no. See config.log for details.]); exit 1;)
+
+
+AC_LANG_RESTORE
+
+REVISION=`cat revision`;
+AC_SUBST(REVISION)
+AC_DEFINE_UNQUOTED(GTRIS_REVISION, $REVISION)
+
+dnl Checks for header files.
+dnl AC_HEADER_STDC
+
+dnl Checks for typedefs, structures, and compiler characteristics.
+AC_C_CONST
+dnl AC_TYPE_SIZE_T
+dnl AC_STRUCT_TM
+
+dnl Checks for library functions.
+dnl AC_FUNC_STRFTIME
+
+AC_OUTPUT(Makefile)

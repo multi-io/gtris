@@ -1,4 +1,4 @@
-/*  $Id: TetrisGameProcess.h,v 1.2.4.1 1999/08/29 18:28:32 olaf Exp $ */
+/*  $Id: TetrisGameProcess.h,v 1.2.4.2 2000/01/08 15:08:29 olaf Exp $ */
 
 /*  GTris
  *  $Name:  $
@@ -24,6 +24,7 @@
 
 #include "gtkbrickviewer.h"
 #include "utils.h"
+#include <map>
 
 
 struct tetr_stone     /* ein Tetris-Stein */
@@ -37,6 +38,10 @@ struct tetr_stone     /* ein Tetris-Stein */
 
 enum TGameStatus {gsStopped,gsRunning,gsPaused};
 
+//Das ist eigentlich nicht so toll, da der globale Namespace polluted wird, nur um
+//eine privates Objekt (CTetrisGameProcess::m_allocatedColors), das diesen operator< benoetigt,
+//zum Funktionieren zu bringen
+bool operator< (const GdkColor& c1, const GdkColor& c2);
 
 class CTetrisGameProcess
 {
@@ -66,6 +71,18 @@ private:
 
     GdkColor* m_basiccols;
     static const int m_nbasiccols;
+
+    //TODO: So gehts nicht ("incomplete Type CTetrisGameProcess has no member compare_colors")
+    //compare_colors global definieren (nicht besser als jetziger globaler operator<)
+    //geht auch nicht ("warning: ANSI C++ forbids initialization of member `m_allocatedColors")
+    //in MSVC++ testen, was das soll!
+    //static bool compare_colors (const GdkColor& c1, const GdkColor& c2);
+    //std::map<GdkColor,int> m_allocatedColors(CTetrisGameProcess::compare_colors);
+
+    std::map<GdkColor,int> m_allocatedColors;
+
+    void AllocateColor (const GdkColor& cl, int number);
+    void FreeColor (const GdkColor& cl, int number);
 
     static void on_playfield_realized
         (GtkWidget* playfield, CTetrisGameProcess* static_this);

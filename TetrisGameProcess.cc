@@ -1,4 +1,4 @@
-/*  $Id: TetrisGameProcess.cc,v 1.6.2.2 1999/10/24 10:40:21 olaf Exp $ */
+/*  $Id: TetrisGameProcess.cc,v 1.6.2.3 2000/01/08 15:08:28 olaf Exp $ */
 
 /*  GTris
  *  $Name:  $
@@ -96,17 +96,78 @@ CTetrisGameProcess::CTetrisGameProcess(GtkBrickViewer* PlayField, GtkBrickViewer
 void CTetrisGameProcess::on_playfield_realized
     (GtkWidget* playfield, CTetrisGameProcess* static_this)
 {
-    GdkColormap* cm = gdk_window_get_colormap(playfield->window);
-    gdk_color_alloc (cm, &static_this->CL_BLACK);
-    gdk_color_alloc (cm, &static_this->CL_WHITE);
-    for (int i=0; i<static_this->m_nbasiccols; i++)
-        gdk_color_alloc (cm, &static_this->m_basiccols[i]);
+//     GdkColormap* cm = gdk_window_get_colormap(playfield->window);
+//     gdk_color_alloc (cm, &static_this->CL_BLACK);
+//     gdk_color_alloc (cm, &static_this->CL_WHITE);
+//     for (int i=0; i<static_this->m_nbasiccols; i++)
+//         gdk_color_alloc (cm, &static_this->m_basiccols[i]);
 
 }
 
 CTetrisGameProcess::~CTetrisGameProcess()
 {
     delete[] m_basiccols;
+}
+
+
+//TODO: Will die Map (m_allocatedColors) auch den operator== auf dem Elementtypen (GdkColor)
+//haben? Wenn ja, gibt es hier ein Problem, da dieser (folgende) operator<
+//das pixel-Feld von GdkColor nicht beachtet, der compilergenerierte operator==
+//(element-by-element-compare) aber schon. ==> Es koennten Situationen auftreten, in denen
+//trotz (a<b)==false und (b<a)==false (a==b)==false waere
+//(naemlich dann, wenn die rgb-Werte gleich, die pixel-Werte aber unterschiedlich sind).
+//pixel-Feld in compare_colors mit hineinnehmen waere nicht so gut, das dieser Wert von gdk_color_alloc
+//ziemlich "willkürlich" (fuer den Benutzer) geaendert wird. Man muesste sicherstellen, dass diese
+//geaenderten Pixelwerte nicht in m_allocatedColors landen. 
+bool operator< (const GdkColor& c1, const GdkColor& c2)
+{
+    if (c1.red != c2.red)
+        return c1.red < c2.red;
+    else
+    {
+        if (c1.green != c2.green)
+            return c1.green < c2.green;
+        else
+        {
+            return c1.blue < c2.blue;
+        }
+    }
+}
+
+void CTetrisGameProcess::AllocateColor (const GdkColor& cl, int number)
+{
+    map<GdkColor,int>::iterator pCol = m_allocatedColors.find (cl);
+    if (pCol == m_allocatedColors.end())
+    {
+        m_allocatedColors[cl] = number;
+        GdkColor writeable_cl = cl;  //Kopie erzeugen wg. const und damit (siehe obiges TODO)
+                                     //der Pixelwert der uebergenenen Variable cl nicht geaendert wird
+        gdk_color_alloc (gdk_window_get_colormap(GTK_WIDGET(m_bvPlayField)->window),
+                         &writeable_cl);
+        //TODO: writeable_cl ist --wie eigentlich fast alle Farbwerte hier-- nur temporaer
+        //(wird beim Verlassen dieses Blocks geloescht)
+        //ist das ein Problem fuer gdk_color_alloc?
+        //wenn ja, muesste man gdk_color_alloc vielleicht doch direkt auf den Keys von m_allocatedColors
+        //arbeiten lassen. Dann aber wohl auch noch operator== fuer GdkColor redefinieren, sodass
+        //der Pixel-Wert dort nicht beachtet wird (damit die map nicht
+        //mit ihren Keys durcheinander kommt)
+    }
+    else
+        pCol->second += number;
+}
+
+
+void CTetrisGameProcess::FreeColor (const GdkColor& cl, int number)
+{
+    map<GdkColor,int>::iterator pCol = m_allocatedColors.find (cl);
+    pCol->second -= number;
+    if (pCol->second == 0)
+    {
+        GdkColor writeable_cl = cl;
+        gdk_colormap_free_colors (gdk_window_get_colormap(GTK_WIDGET(m_bvPlayField)->window),
+                                  &writeable_cl,1);
+        m_allocatedColors.erase (cl);
+    }
 }
 
 
@@ -144,6 +205,7 @@ void CTetrisGameProcess::DropDownCurrentStone (void)
     int line[30],
         no_lines=0;
 
+    map<GdkColor,int> colors2bfreed;
     //TODO: curr_point wird neu deklariert (siehe Definition
     //von FOR_EACH_SHAPE_POINT). Einige Compiler moegen das vielleicht nicht...
     FOR_EACH_SHAPE_POINT(current_stone.shape,curr_point)
@@ -160,14 +222,26 @@ void CTetrisGameProcess::DropDownCurrentStone (void)
             continue;
 
         bool FullLine = true;
+        map<GdkColor,int> line_colors;
         for (i=0; i<PFExtend.x; i++)
-            if (gtk_brick_viewer_GetBrickColor(m_bvPlayField,i,posy) == CL_BLACK)
+        {
+            GdkColor cl = gtk_brick_viewer_GetBrickColor(m_bvPlayField,i,posy);
+            if (cl == CL_BLACK)
             {
                 FullLine = false;
                 break;
             }
+            line_colors[cl]++;
+        }
         if (FullLine)
+        {
             line [no_lines++]=posy;
+            for (map<GdkColor,int>::iterator it = line_colors.begin();
+                 it != line_colors.end(); it++)
+            {
+                colors2bfreed[it->first] += it->second;
+            }
+        }
     }
 
 #   ifdef SPEED_TEST
@@ -195,6 +269,12 @@ void CTetrisGameProcess::DropDownCurrentStone (void)
 
     gtk_brick_viewer_SetContents (m_bvPlayField,cntnts);
     gtk_brick_viewer_FreeRect (cntnts,gtk_brick_viewer_GetRows(m_bvPlayField));
+
+    for (map<GdkColor,int>::iterator it = colors2bfreed.begin();
+         it != colors2bfreed.end(); it++)
+    {
+        FreeColor (it->first,it->second);
+    }
 
     m_score += inc_stone+depth*inc_drop1line+no_lines*inc_line;
     m_lines += no_lines;
@@ -243,17 +323,29 @@ bool CTetrisGameProcess::PointInHeap (int col, int row)
 
 void CTetrisGameProcess::SetCurrentStone (const tetr_stone& new_one)
 {
+    bool no_allocs = false;
+    if (current_stone.valid &&
+        (current_stone.colour == new_one.colour) &&
+        (current_stone.shape.no_points == new_one.shape.no_points))
+        no_allocs = true;
+
     if (current_stone.valid)
+    {
         gtk_brick_viewer_PasteShape
             (m_bvPlayField,
              current_stone.shape,
              current_stone.position.x,
              current_stone.position.y,
              CL_BLACK);
+        if (!no_allocs)
+            FreeColor (current_stone.colour, current_stone.shape.no_points);
+    }
 
     current_stone = new_one;
     current_stone.valid = TRUE;
 
+    if (!no_allocs)
+        AllocateColor (current_stone.colour, current_stone.shape.no_points);
     gtk_brick_viewer_PasteShape
         (m_bvPlayField,
          current_stone.shape,

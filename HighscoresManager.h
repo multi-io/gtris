@@ -40,8 +40,8 @@ public:
     void AddNewEntry (THscEntry& entry, int iLevel);
     int GetLeastScore (int iLevel) const;
 
-    bool LoadFromFile (const std::string file);
-    bool SaveToFile (const std::string file) const;
+    bool LoadFromFile (const std::string& file);
+    bool SaveToFile (const std::string& file) const;
 
     void ShowDialog (bool bShow = true);
     bool IsDialogVisible ();

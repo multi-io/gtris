@@ -3,6 +3,8 @@
 #include <gdk/gdkkeysyms.h>
 #include "TetrisGameProcess.h"
 
+#include <stdio.h>    //TODO: nur fuer Debugging
+
 
 #define no_shapes 7
 static struct stone_shape
@@ -61,6 +63,7 @@ CTetrisGameProcess::~CTetrisGameProcess()
 
 void CTetrisGameProcess::drop_down (void)                /* Flugstein "abwerfen" */
 {
+
     gtk_brick_viewer_PasteShape
         ( m_bvPlayField,
           current_stone.shape,
@@ -95,14 +98,16 @@ void CTetrisGameProcess::drop_down (void)                /* Flugstein "abwerfen"
          current_stone.position.y + depth,
          current_stone.colour);                  //current_stone in den Haufen "einfÅgen"
 
+
+
     int line[30],
         no_lines=0;
 
-    for (curr_point=current_stone.shape.relpos;  /* alle Punkte des Flugsteins */
+    for (curr_point=current_stone.shape.relpos;  // alle Punkte des Flugsteins
          curr_point-current_stone.shape.relpos<current_stone.shape.no_points;
          curr_point++)
     {
-        int posy=current_stone.position.y+curr_point->y+depth; /* um depth nach unten setzen */
+        int posy=current_stone.position.y+curr_point->y+depth; // um depth nach unten setzen
 
         bool found = false;
         int i;
@@ -120,8 +125,8 @@ void CTetrisGameProcess::drop_down (void)                /* Flugstein "abwerfen"
                 FullLine = false;
                 break;
             }
-        if (FullLine)  /* Linie voll? */
-            line [no_lines++]=posy;             /* ja -> y-Pos. der Linie merken */
+        if (FullLine)  // Linie voll?
+            line [no_lines++]=posy;             // ja -> y-Pos. der Linie merken
     }
 
     GdkColor** cntnts = gtk_brick_viewer_GetContents(m_bvPlayField);
@@ -133,10 +138,10 @@ void CTetrisGameProcess::drop_down (void)                /* Flugstein "abwerfen"
         cntnts[0] = new GdkColor[PFExtend.x];
         for (int i2=0; i2<PFExtend.x; i2++)
             cntnts[0][i2] = CL_BLACK;
-//        memmove (cntnts[1], cntnts,
-//           PFExtend.x*sizeof(COLORREF)*line[i]);  /* darÅberliegenden Teil des Haufens 1 nach unten schieben*/
-	    for (int n=i+1;n<no_lines;n++)         /* andere, darÅberliegende Linien-Positionen */
-	        if (line[n]<line[i]) line[n]++;  /* auch um 1 nach unten setzen */
+        //        memmove (cntnts[1], cntnts,
+        //           PFExtend.x*sizeof(COLORREF)*line[i]);  /* darÅberliegenden Teil des Haufens 1 nach unten schieben*/
+        for (int n=i+1;n<no_lines;n++)         /* andere, darÅberliegende Linien-Positionen */
+            if (line[n]<line[i]) line[n]++;  /* auch um 1 nach unten setzen */
     }
 
 /*  if (EnableSounds)
@@ -168,13 +173,13 @@ bool CTetrisGameProcess::does_fit_in_pfield (struct tetr_stone tstone)  /* Test,
     for (GdkPoint* curr_point=tstone.shape.relpos;     /* fÅr alle Punkte von tstone */
          (curr_point-tstone.shape.relpos<tstone.shape.no_points) && fits; /* Schleife lÑuft nur, solange */
          curr_point++)                                                        /* fits==TRUE */
-	{
-        int pfx = tstone.position.x+curr_point->x, /* Posit. des Punkts auf dem SFeld */
-	        pfy = tstone.position.y+curr_point->y; /* berechnen */
-	    fits = (pfx>=0) && (pfx<PFExtend.x) && /* Punkt paòt, wenn: */
-		       (pfy>=0) && (pfy<PFExtend.y) && /*      - er innerhalb des SFeldes */
-		       !PointInHeap (pfx,pfy);               /*      - und nicht im Haufen liegt */
-	}
+    {
+        int pfx = tstone.position.x+curr_point->x,  /* Posit. des Punkts auf dem SFeld */
+            pfy = tstone.position.y+curr_point->y;  /* berechnen */
+        fits = (pfx>=0) && (pfx<PFExtend.x) &&      /* Punkt passt, wenn: */
+            (pfy>=0) && (pfy<PFExtend.y) &&         /*      - er innerhalb des SFeldes */
+            !PointInHeap (pfx,pfy);                 /*      - und nicht im Haufen liegt */
+    }
     return (fits);
 }
 
@@ -202,7 +207,7 @@ void CTetrisGameProcess::fade_into (struct tetr_stone new_one) /* new_one zum Fl
          current_stone.shape,
          current_stone.position.x,
          current_stone.position.y,
-         CL_BLACK);                         //current_stone l˜schen
+         CL_BLACK);                         //current_stone loeschen
 
     current_stone=new_one;         /* current_stone aktualisieren */
     current_stone.valid = TRUE;
@@ -238,19 +243,23 @@ void CTetrisGameProcess::StepForth ()
                 drop_down ();   /* sonst: "abwerfen" (in diesem Fall um 0 Linien) */
         }
         else
-        {                   /* Flugstein nicht gÅltig -> */
+        {                   /* Flugstein nicht gueltig -> */
             /* neuen Flugstein "auf die Reise schicken": */
             if (!next_shape) /* noch keine next-Form vorhanden (nur am Anfang des Spiels)? */
             {
-                next_shape=shape_avail + rand() * no_shapes / (RAND_MAX + 1); /* ja -> sowohl next-Form */
-                current_stone.shape=shape_avail[(rand()-1) / 20 * no_shapes / (RAND_MAX/20)];
-                /* als auch Form des Flugsteins zufÑllig erzeugen */
+                next_shape = shape_avail + (rand()/20-1) * no_shapes / (RAND_MAX/20); /* ja -> sowohl next-Form */  //TODO: kann nicht ganz stimmen...
+                current_stone.shape = shape_avail[(rand()/20-1) * no_shapes / (RAND_MAX/20)];
+                /* als auch Form des Flugsteins zufaellig erzeugen */
             }
             else
             {    /* next-Form schon vorhanden */
-                current_stone.shape=*next_shape; /* -> Flugstein-Form = next-Form setzen */
-                next_shape=shape_avail + rand() * no_shapes / (RAND_MAX + 1); /* und nur next-Form */
-            }                                   /* zufÑllig erzeugen */
+                current_stone.shape = *next_shape; /* -> Flugstein-Form = next-Form setzen */
+                next_shape =  shape_avail + (rand()/20-1) * no_shapes / (RAND_MAX/20); /* und nur next-Form */
+            }                                   /* zufaellig erzeugen */
+
+            if (next_shape-shape_avail >= no_shapes)       //TODO: nur fuer Debugging
+                printf ("wuaaaa...\n");
+
 
             //Next-Feld neu zeichnen
             gtk_brick_viewer_FillAll (m_bvNextField,CL_BLACK);
@@ -259,7 +268,7 @@ void CTetrisGameProcess::StepForth ()
             /* Form des neuen Flugsteins ist jetzt definiert */
 
             /* nun wird er ins Spielfeld gesetzt: */
-            //current_stone.valid=TRUE;  /* Flugstein gÅltig machen */
+            //current_stone.valid=TRUE;  /* Flugstein gueltig machen */
             current_stone.position.x=PFExtend.x/2; /* neue Spaltenposition=Spielfeldmitte */
             int maxy;
             GdkPoint* curr_point;
@@ -268,9 +277,9 @@ void CTetrisGameProcess::StepForth ()
                      <current_stone.shape.no_points;  /* des Flugsteins ermitteln */
                  curr_point++)
                 if (-curr_point->y>maxy) maxy=-curr_point->y;
-            current_stone.position.y=maxy;  /* neue Zeilenpos. so setzen, daò der */
-            /* Flugstein den oberen SFeld-Rand berÅhrt */
-            /* aber nicht Åberschneidet */
+            current_stone.position.y=maxy;  /* neue Zeilenpos. so setzen, dass der */
+            /* Flugstein den oberen SFeld-Rand beruehrt */
+            /* aber nicht ueberschneidet */
 
             //Farbe des neuen Flugsteins bestimmen
             GdkColor c;
@@ -286,16 +295,16 @@ void CTetrisGameProcess::StepForth ()
             };
             switch (m_StoneColorRange)
             {
-            case scrWide:
-                /*               c = RGB(rand()*0x100/(RAND_MAX+1),
-                                 rand()*0x100/(RAND_MAX+1),
-                                 rand()*0x100/(RAND_MAX+1));
-                                 if (c.red+c.green+c.blue < 300)
-                                 *(((BYTE*)&c)+rand()*3/(RAND_MAX+1)) = 0xff;
-                                 break;*/
-            case scrBasic:
-                /*c = basiccols[rand()*sizeof(basiccols)/sizeof(COLORREF)/(RAND_MAX+1)];
-                  break;*/
+//             case scrWide:
+//                 c = RGB(rand()*0x100/(RAND_MAX+1),
+//                         rand()*0x100/(RAND_MAX+1),
+//                         rand()*0x100/(RAND_MAX+1));
+//                 if (c.red+c.green+c.blue < 300)
+//                     *(((BYTE*)&c)+rand()*3/(RAND_MAX+1)) = 0xff;
+//                 break;
+//             case scrBasic:
+//                 c = basiccols[rand()*sizeof(basiccols)/sizeof(COLORREF)/(RAND_MAX+1)];
+//                 break;
             case scrBlackWhite:
                 c = RGB(0xff,0xff,0xff);
                 break;
@@ -328,7 +337,7 @@ void CTetrisGameProcess::ProcessKey(unsigned Key)
         GdkPoint* curr_point;
         switch (Key)  /* gedrÅckte Taste ermitteln */
         {
-        case GDK_Left /*VK_LEFT*/:                     /* wenn crsr LEFT gedrueckt: */
+        case GDK_Left:                     /* wenn crsr LEFT gedrueckt: */
             new_stone.position.x--;      /* new_stone 1 nach links */
             if (does_fit_in_pfield (new_stone))
                 fade_into (new_stone);
@@ -336,7 +345,7 @@ void CTetrisGameProcess::ProcessKey(unsigned Key)
             /* sonst Taste ignorieren */
             break;
 
-        case GDK_Right /*VK_RIGHT*/:                     /* analog fuer crsr RIGHT */
+        case GDK_Right:                     /* analog fuer crsr RIGHT */
             new_stone.position.x++;
             if (does_fit_in_pfield (new_stone))
                 fade_into (new_stone);
@@ -373,7 +382,7 @@ void CTetrisGameProcess::ProcessKey(unsigned Key)
                 fade_into (new_stone);
             break;
 
-        case ' ' /*VK_SPACE*/:                     /* wenn SPACE gedrueckt: */
+        case ' ':                     /* wenn SPACE gedrueckt: */
             drop_down ();                  /* Flugstein abwerfen */
             break;
 

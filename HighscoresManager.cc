@@ -44,7 +44,7 @@ static gint dialog_delete_event( GtkWidget *widget,
 }
 
 
-void close_click (GtkWidget*, gpointer pmgr)
+static void close_click (GtkWidget*, gpointer pmgr)
 {
     ((HighscoresManager*)pmgr)->ShowDialog (false);
 }
@@ -178,7 +178,7 @@ int HighscoresManager::GetLeastScore (int iLevel) const
 }
 
 
-bool HighscoresManager::LoadFromFile (const std::string file)
+bool HighscoresManager::LoadFromFile (const std::string& file)
 {
     struct
     {
@@ -235,7 +235,7 @@ bool HighscoresManager::LoadFromFile (const std::string file)
 }
 
 
-bool HighscoresManager::SaveToFile (const std::string file) const
+bool HighscoresManager::SaveToFile (const std::string& file) const
 {
     struct
     {

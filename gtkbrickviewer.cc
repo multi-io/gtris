@@ -152,6 +152,18 @@ void gtk_brick_viewer_SetBrickSize (GtkBrickViewer* bv, int s)
 }
 
 
+void gtk_brick_viewer_InvalidateBrickArea (GtkBrickViewer* bv, int col1, int row1, int col2, int row2)
+{
+    GdkRectangle r;
+    r.x = bv->m_BrickSize * col1;
+    r.y = bv->m_BrickSize * row1;
+    r.width = bv->m_BrickSize * (col2-col1+1);
+    r.height = bv->m_BrickSize * (row2-row1+1);
+
+    gtk_widget_draw (GTK_WIDGET(bv),&r);
+}
+
+
 void gtk_brick_viewer_SetBrickColor (GtkBrickViewer* bv, GdkColor color, int col, int row)
 {
     bv->m_Contents[col][row] = color;
@@ -335,18 +347,6 @@ static gint gtk_brick_viewer_expose (GtkWidget* widget, GdkEventExpose* event)
         }
 
     return FALSE;
-}
-
-
-void gtk_brick_viewer_InvalidateBrickArea (GtkBrickViewer* bv, int col1, int row1, int col2, int row2)
-{
-    GdkRectangle r;
-    r.x = bv->m_BrickSize * col1;
-    r.y = bv->m_BrickSize * row1;
-    r.width = bv->m_BrickSize * (col2-col1+1);
-    r.height = bv->m_BrickSize * (row2-row1+1);
-
-    gtk_widget_draw (GTK_WIDGET(bv),&r);
 }
 
 

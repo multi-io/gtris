@@ -3,6 +3,7 @@
 #include "gtkbrickviewer.h"
 #include "types.h"
 #include "TetrisGameProcess.h"
+#include "HighscoresManager.h"
 #include "registry.h"
 
 #include <iostream>
@@ -20,11 +21,13 @@ static unsigned m_Level, m_NewLevel;
 const CPoint PlayFieldSize (12,23);
 const CPoint NextFieldSize (5,5);
 
-string m_HscFile;
-string m_HscUserName;
+static HighscoresManager* m_pHighscoresManager;
+
+static string m_HscFile;
+static string m_HscUserName;
 
 static uint timeout_tag;
-bool timer_installed = false;
+static bool timer_installed = false;
 
 gint OnTimeout (gpointer)
 {
@@ -94,6 +97,13 @@ static void OnGamePause(GtkWidget*, gpointer)
 {
     GamePaused = true;
 }
+
+
+static void OnViewHighscores(GtkWidget*, gpointer) 
+{
+    m_pHighscoresManager->ShowDialog (m_pHighscoresManager->IsDialogVisible()?false:true);
+}
+
 
 // void CTetrisWnd::OnUpdateGamePause(CCmdUI* pCmdUI) 
 // {
@@ -176,21 +186,20 @@ static void GameEndNotify ()
     cout << "Game Over!" << endl;
 
     int score = m_pGameProcess->GetScore ();
-//     if (score > static_this->m_HighscoresDialog.GetLeastScore (static_this->m_Level))
-//     {
-//         CHscEntryDialog dlg;
-//         dlg.m_HscEntry.score = score;
-//         dlg.m_HscEntry.lines = static_this->m_gpGameProcess.GetLines ();
-//         time (&dlg.m_HscEntry.date);
-//         dlg.m_Level = static_this->m_Level;
-//         dlg.m_HscEntry.name = static_this->m_HscUserName;
+    if (score > m_pHighscoresManager->GetLeastScore (m_Level))
+    {
+        THscEntry hscentry;
+        hscentry.score = score;
+        hscentry.lines = m_pGameProcess->GetLines ();
+        time (&hscentry.date);
+        hscentry.name = m_HscUserName;
         
-//         if (dlg.DoModal ())
-//         {
-//             static_this->m_HighscoresDialog.AddNewEntry (dlg.m_HscEntry,static_this->m_Level);
-//             static_this->m_HscUserName = dlg.m_HscEntry.name;
-//         }
-//     }
+        if (HighscoresManager::HighscoresUserQuery (&hscentry, m_Level))
+        {
+            m_pHighscoresManager->AddNewEntry (hscentry,m_Level);
+            m_HscUserName = hscentry.name;
+        }
+    }
 }
 
 
@@ -298,7 +307,9 @@ static GtkItemFactoryEntry menu_items[] = {
   { "/Game/_New",    "<control>N", OnGameNew,   0, NULL },
   { "/Game/_Run",    "F5", OnGameRun,   0, NULL },
   { "/Game/_Stop",   "<control>S", OnGameStop,  0, NULL },
-  { "/Game/_Pause",  (char*)NULL,  OnGamePause, 0, NULL }
+  { "/Game/_Pause",  (char*)NULL,  OnGamePause, 0, NULL },
+  { "/_View",        (char*)NULL,  (GtkItemFactoryCallback)NULL,        0, "<Branch>" },
+  { "/View/_Highscores",  (char*)NULL,  OnViewHighscores, 0, NULL }
 };
 
 
@@ -335,7 +346,7 @@ static void get_main_menu( GtkWidget  *window, GtkWidget **menubar )
 
 
 
-static void destroy (GtkWidget*, gpointer)
+static void destroy_wnd (GtkWidget*, gpointer)
 {
     gtk_main_quit ();
 }
@@ -350,6 +361,8 @@ static void manUpdate (GtkWidget*, gpointer)
 int main (int argc, char* argv[])
 {
     gtk_init (&argc,&argv);
+
+    m_pHighscoresManager = new HighscoresManager;
 
     m_bvPlayField = GTK_BRICK_VIEWER(gtk_brick_viewer_new (PlayFieldSize.x,PlayFieldSize.y,15));
     m_bvNextField = GTK_BRICK_VIEWER(gtk_brick_viewer_new (NextFieldSize.x,NextFieldSize.y,15));
@@ -387,7 +400,7 @@ int main (int argc, char* argv[])
     wnd = gtk_window_new (GTK_WINDOW_TOPLEVEL);
     gtk_window_set_title (GTK_WINDOW(wnd),"GTris");
 
-    gtk_signal_connect (GTK_OBJECT(wnd), "destroy", GTK_SIGNAL_FUNC(destroy), NULL);
+    gtk_signal_connect (GTK_OBJECT(wnd), "destroy", GTK_SIGNAL_FUNC(destroy_wnd), NULL);
 
     GtkVBox* main_vbox = GTK_VBOX(gtk_vbox_new (FALSE, 1));
     gtk_container_border_width (GTK_CONTAINER(main_vbox), 1);
@@ -399,33 +412,35 @@ int main (int argc, char* argv[])
     gtk_widget_show (menubar);
 
     GtkHBox* centerBox;
-    centerBox = GTK_HBOX(gtk_hbox_new(FALSE,10));
+    centerBox = GTK_HBOX(gtk_hbox_new(FALSE,0));
 
     gtk_box_pack_start (GTK_BOX(main_vbox), GTK_WIDGET(centerBox), FALSE, TRUE, 0);
 
+    GtkWidget* sep = gtk_vseparator_new();
     gtk_box_pack_start (GTK_BOX(centerBox),GTK_WIDGET(m_bvPlayField),TRUE,TRUE,0);
+    gtk_box_pack_start (GTK_BOX(centerBox),sep,TRUE,TRUE,0);
     gtk_box_pack_start (GTK_BOX(centerBox),GTK_WIDGET(m_bvNextField),TRUE,TRUE,0);
 
     gtk_signal_connect (GTK_OBJECT(wnd), "key_press_event", GTK_SIGNAL_FUNC(OnKeyPressed), NULL);
 
     gtk_widget_show (GTK_WIDGET(m_bvPlayField));
     gtk_widget_show (GTK_WIDGET(m_bvNextField));
+    gtk_widget_show (GTK_WIDGET(sep));
     gtk_widget_show (GTK_WIDGET(centerBox));
     gtk_widget_show (GTK_WIDGET(menubar));
     gtk_widget_show (GTK_WIDGET(main_vbox));
     gtk_widget_show (wnd);
 
-    //gtk_brick_viewer_SetBrickColor (m_bvPlayField, RGB(255,255,255), 7,12 );
 
-
-    GtkButton* btn = GTK_BUTTON(gtk_button_new_with_label("manuelles Update"));
-    gtk_box_pack_start (GTK_BOX(centerBox),GTK_WIDGET(btn),TRUE,TRUE,0);
-    gtk_widget_show (GTK_WIDGET(btn));
-    gtk_signal_connect (GTK_OBJECT(btn), "clicked", GTK_SIGNAL_FUNC(manUpdate), NULL);
+//     GtkButton* btn = GTK_BUTTON(gtk_button_new_with_label("manuelles Update"));
+//     gtk_box_pack_start (GTK_BOX(centerBox),GTK_WIDGET(btn),TRUE,TRUE,0);
+//     gtk_widget_show (GTK_WIDGET(btn));
+//     gtk_signal_connect (GTK_OBJECT(btn), "clicked", GTK_SIGNAL_FUNC(manUpdate), NULL);
 
     gtk_main ();
 
     delete m_pGameProcess;
+    delete m_pHighscoresManager;
 
     registry.SetValue ("Speed", m_Level);
     registry.SetValue ("StoneColorRange", (int)m_pGameProcess->m_StoneColorRange);

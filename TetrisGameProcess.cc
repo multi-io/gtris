@@ -342,7 +342,7 @@ void CTetrisGameProcess::ProcessKey(unsigned Key)
                 fade_into (new_stone);
             break;
 
-        case GDK_Up /*VK_UP*/:                     /* wenn crsr UP gedrueckt: */
+        case GDK_Down:                                 /* wenn crsr DOWN gedrueckt: */
             for (curr_point=new_stone.shape.relpos;  /* new_stone */
                  curr_point-new_stone.shape.relpos  /* um 90 Grad */
                      < new_stone.shape.no_points;
@@ -359,7 +359,7 @@ void CTetrisGameProcess::ProcessKey(unsigned Key)
             /* sonst Taste ignorieren */
             break;
 
-        case GDK_Down /*VK_DOWN*/:			/* analog fuer crsr DOWN */
+        case GDK_Up:                                   /* analog fuer crsr UP */
             for (curr_point=new_stone.shape.relpos;
                  curr_point-new_stone.shape.relpos
                      < new_stone.shape.no_points;

@@ -1,4 +1,4 @@
-#  $Id: Makefile,v 1.5.4.4 1999/10/24 16:29:09 olaf Exp $
+#  $Id: Makefile,v 1.5.4.5 1999/12/02 20:59:16 olaf Exp $
 
 #  GTris
 #  $Name:  $
@@ -64,7 +64,7 @@ xpms.cc : $(XPMS)
 	    echo; \
 	    echo char\* `basename $$xpm .xpm`_xpm [] =; \
 	    echo {; \
-	    cat $$xpm | grep -Ev '/\*|\*/|\{|\}|static'; \
+	    cat $$xpm | egrep -v '/\*|\*/|\{|\}|static'; \
 	    echo }\;; \
 	done \
 	) >xpms.cc

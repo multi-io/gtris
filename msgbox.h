@@ -1,4 +1,4 @@
-/*  $Id: msgbox.h,v 1.2.4.1 1999/08/29 18:28:33 olaf Exp $ */
+/*  $Id: msgbox.h,v 1.2.4.2 1999/10/17 09:30:11 olaf Exp $ */
 
 /*  GTris
  *  $Name:  $
@@ -22,15 +22,15 @@
 #ifndef MSGBOX_H
 #define MSGBOX_H
 
-const MB_OK = 1;
-const MB_CANCEL = 2;
-const MB_YES = 4;
-const MB_NO = 8;
+const int MB_OK = 1;
+const int MB_CANCEL = 2;
+const int MB_YES = 4;
+const int MB_NO = 8;
 
-const MB_OKCANCEL = MB_OK|MB_CANCEL;
-const MB_YESNO = MB_YES|MB_NO;
+const int MB_OKCANCEL = MB_OK|MB_CANCEL;
+const int MB_YESNO = MB_YES|MB_NO;
 
-const nBtnTypes = 4;
+const int nBtnTypes = 4;
 
 int MsgBox (const char* title, const char* msg, int btns);
 

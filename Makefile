@@ -1,4 +1,4 @@
-#  $Id: Makefile,v 1.5.4.1 1999/08/29 18:28:32 olaf Exp $
+#  $Id: Makefile,v 1.5.4.2 1999/10/17 09:30:10 olaf Exp $
 
 #  GTris
 #  $Name:  $
@@ -108,8 +108,9 @@ install: ready_for_install
 REVISION:=$(shell echo $(filter release-%,$Name:  $) | sed 's/release-//g' | sed 's/-/./g' )
 
 tgz distrib:
-	DIRNAME=gtris-$(REVISION); \
+	@DIRNAME=gtris-$(REVISION); \
 	TGZNAME=$${DIRNAME}.tar.gz; \
+	echo making $$TGZNAME ...; \
 	mkdir $$DIRNAME; \
 	rm -Rf $$DIRNAME/*; \
 	cp *.cc *.h $(XPMS) Makefile hscores.bin COPYING INSTALL $$DIRNAME/; \

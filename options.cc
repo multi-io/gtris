@@ -1,4 +1,4 @@
-/*  $Id: options.cc,v 1.4.2.1 1999/08/29 18:28:33 olaf Exp $ */
+/*  $Id: options.cc,v 1.4.2.2 1999/10/17 09:30:12 olaf Exp $ */
 
 /*  GTris
  *  $Name:  $
@@ -33,6 +33,43 @@ static gint on_dlg_delete ( GtkWidget*, GdkEvent, gpointer );
 static bool m_bOK;
 
 
+void connect_accelerator
+    (const char* label_text,
+     GtkLabel* label_widget,
+     GtkWidget* target,
+     const char* signal,
+     GtkAccelGroup* accel_group)
+{
+    guint accel_key;
+    accel_key = gtk_label_parse_uline (label_widget,label_text);
+    gtk_widget_add_accelerator
+            (target, signal,
+             accel_group,
+             accel_key,
+             GDK_MOD1_MASK,
+             GTK_ACCEL_LOCKED);
+}
+
+
+void connect_button_accelerator
+    (GtkButton* button,
+     const char* label_text,
+     GtkAccelGroup* accel_group)
+{
+    guint accel_key;
+    GtkWidget* btn_label = gtk_label_new ("");
+    accel_key = gtk_label_parse_uline (GTK_LABEL(btn_label),label_text);
+    gtk_container_add (GTK_CONTAINER(button), btn_label);
+    gtk_widget_show (btn_label);
+    gtk_widget_add_accelerator
+            (GTK_WIDGET(button), "clicked",
+             accel_group,
+             accel_key,
+             GDK_MOD1_MASK,
+             GTK_ACCEL_LOCKED);
+}
+
+
 bool GetOptions (unsigned* level,
                  std::string* hscfile,
                  CTetrisGameProcess::StoneColorRange* colorRange,
@@ -65,6 +102,9 @@ bool GetOptions (unsigned* level,
                         NULL);
     gtk_window_set_title (GTK_WINDOW (m_dialog), "Options");
     gtk_window_set_policy (GTK_WINDOW (m_dialog), TRUE, TRUE, FALSE);
+
+    GtkAccelGroup* accel_group = gtk_accel_group_new ();
+    gtk_accel_group_attach (accel_group, GTK_OBJECT (m_dialog));
 
     dialog_vbox1 = GTK_DIALOG (m_dialog)->vbox;
     gtk_widget_show (dialog_vbox1);
@@ -106,7 +146,14 @@ bool GetOptions (unsigned* level,
                       (GtkAttachOptions) (GTK_EXPAND | GTK_FILL),
                       (GtkAttachOptions) (GTK_EXPAND | GTK_FILL), 0, 0);
 
-    label2 = gtk_label_new ("Highscores File:");
+    label2 = gtk_label_new ("");
+    connect_accelerator
+        ("Highscores _File:",
+         GTK_LABEL(label2),
+         m_entryHscFile,
+         "grab_focus",
+         accel_group);
+
     gtk_widget_show (label2);
     gtk_table_attach (GTK_TABLE (table2), label2, 0, 1, 1, 2,
                       (GtkAttachOptions) (GTK_EXPAND | GTK_FILL),
@@ -119,24 +166,36 @@ bool GetOptions (unsigned* level,
                       (GtkAttachOptions) (GTK_EXPAND | GTK_FILL),
                       (GtkAttachOptions) GTK_EXPAND, 10, 0);
 
-    label6 = gtk_label_new ("Level:");
+    label6 = gtk_label_new ("");
     gtk_widget_show (label6);
     gtk_box_pack_start (GTK_BOX (vbox4), label6, TRUE, TRUE, 0);
     gtk_misc_set_alignment (GTK_MISC (label6), 1.93715e-07, 1);
 
     m_spbLevel_adj = gtk_adjustment_new (1, 0, 4, 1, 10, 10);
     m_spbLevel = gtk_spin_button_new (GTK_ADJUSTMENT (m_spbLevel_adj), 1, 0);
+    connect_accelerator
+        ("_Level:",
+         GTK_LABEL(label6),
+         m_spbLevel,
+         "grab_focus",
+         accel_group);
     gtk_widget_show (m_spbLevel);
     gtk_box_pack_start (GTK_BOX (vbox4), m_spbLevel, TRUE, TRUE, 0);
     gtk_widget_set_usize (m_spbLevel, 71, -2);
 
-    label5 = gtk_label_new ("Brick Size:");
+    label5 = gtk_label_new ("");
     gtk_widget_show (label5);
     gtk_box_pack_start (GTK_BOX (vbox4), label5, TRUE, TRUE, 0);
     gtk_misc_set_alignment (GTK_MISC (label5), 1.93715e-07, 1);
 
     m_spbBrickSize_adj = gtk_adjustment_new (1, 1, 100, 1, 10, 10);
     m_spbBrickSize = gtk_spin_button_new (GTK_ADJUSTMENT (m_spbBrickSize_adj), 1, 0);
+    connect_accelerator
+        ("_Brick Size:",
+         GTK_LABEL(label5),
+         m_spbBrickSize,
+         "grab_focus",
+         accel_group);
     gtk_widget_show (m_spbBrickSize);
     gtk_box_pack_start (GTK_BOX (vbox4), m_spbBrickSize, TRUE, TRUE, 0);
 
@@ -144,14 +203,17 @@ bool GetOptions (unsigned* level,
     gtk_widget_show (dialog_action_area1);
     gtk_container_border_width (GTK_CONTAINER (dialog_action_area1), 10);
 
-    m_btnOK = gtk_button_new_with_label ("OK");
+    //m_btnOK = gtk_button_new_with_label ("OK");
+    m_btnOK = gtk_button_new ();
+    connect_button_accelerator (GTK_BUTTON(m_btnOK), "_OK", accel_group);
     gtk_widget_show (m_btnOK);
     gtk_box_pack_start (GTK_BOX (dialog_action_area1), m_btnOK, TRUE, TRUE, 0);
     gtk_signal_connect (GTK_OBJECT (m_btnOK), "clicked",
                         GTK_SIGNAL_FUNC (on_btnOK_clicked),
                         NULL);
 
-    m_btnCancel = gtk_button_new_with_label ("Cancel");
+    m_btnCancel = gtk_button_new ();
+    connect_button_accelerator (GTK_BUTTON(m_btnCancel), "_Cancel", accel_group);
     gtk_widget_show (m_btnCancel);
     gtk_box_pack_start (GTK_BOX (dialog_action_area1), m_btnCancel, TRUE, TRUE, 0);
     gtk_signal_connect (GTK_OBJECT (m_btnCancel), "clicked",

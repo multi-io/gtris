@@ -1,4 +1,4 @@
-/*  $Id: gtkbrickviewer.cc,v 1.4.2.1 1999/08/29 18:28:32 olaf Exp $ */
+/*  $Id: gtkbrickviewer.cc,v 1.4.2.2 1999/10/17 09:30:11 olaf Exp $ */
 
 /*  GTris
  *  $Name:  $
@@ -358,7 +358,6 @@ static gint gtk_brick_viewer_expose (GtkWidget* widget, GdkEventExpose* event)
         for (int row = minRow; row <= maxRow; row++)
         {
             GdkGCValues values;
-            GdkColor cl = bv->m_Contents[col][row];
             values.foreground = bv->m_Contents[col][row];
             GdkGC* gc = gdk_gc_new_with_values (widget->window,&values,GDK_GC_FOREGROUND);
             gdk_draw_rectangle (widget->window,gc,TRUE,

@@ -1,4 +1,4 @@
-/*  $Id: utils.h,v 1.1.4.2 1999/10/24 10:40:22 olaf Exp $ */
+/*  $Id: utils.h,v 1.1.4.2.2.1 2000/01/30 04:22:30 olaf Exp $ */
 
 /*  GTris
  *  $Name:  $
@@ -28,6 +28,9 @@
 #include <gtk/gtklabel.h>
 #include <gtk/gtkbutton.h>
 #include <gtk/gtkaccelgroup.h>
+
+#include <string>
+#include <unistd.h>
 
 struct CPoint : public GdkPoint
 {
@@ -61,6 +64,8 @@ inline bool operator!= (const GdkColor& cl1, const GdkColor& cl2)
 
 GdkColor RGB(gushort r, gushort g, gushort b);
 
+
+std::string get_datafile_path(const char* filename, int desired_mode = R_OK);
 
 void connect_accelerator
     (const char* label_text,

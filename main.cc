@@ -1,4 +1,4 @@
-/*  $Id: main.cc,v 1.6.2.2 1999/10/24 10:40:22 olaf Exp $ */
+/*  $Id: main.cc,v 1.6.2.2.2.1 2000/01/30 04:22:29 olaf Exp $ */
 
 /*  GTris
  *  $Name:  $
@@ -540,7 +540,7 @@ static void OnHelpAbout()
         (GTK_WIDGET(aboutbox)->window,
          &mask,
          &(gtk_widget_get_style (GTK_WIDGET(aboutbox))->bg[GTK_STATE_NORMAL]),
-         "title.xpm");
+         get_datafile_path("title.xpm").c_str());
     GtkPixmap* pmwidget = GTK_PIXMAP( gtk_pixmap_new (pm,mask) );
 
     //TODO: Der Separator in einem GtkDialog gehoert mit zur dessen vbox

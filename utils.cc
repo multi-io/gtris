@@ -1,4 +1,4 @@
-/*  $Id: utils.cc,v 1.1.4.2 1999/10/24 10:40:22 olaf Exp $ */
+/*  $Id: utils.cc,v 1.1.4.2.2.1 2000/01/30 04:22:30 olaf Exp $ */
 
 /*  GTris
  *  $Name:  $
@@ -20,6 +20,8 @@
  */
 
 #include "utils.h"
+
+using namespace std;
 
 
 GdkColor RGB(gushort r, gushort g, gushort b)
@@ -67,4 +69,24 @@ void connect_button_accelerator
              accel_key,
              GDK_MOD1_MASK,
              GTK_ACCEL_LOCKED);
+}
+
+
+string get_datafile_path(const char* filename, int desired_mode)
+{
+    string path;
+
+    path = string(DATA_DIR) + "/gtris/" + filename;
+    if (0 == access(path.c_str(), desired_mode))
+        return path;
+
+    gchar* buf = g_get_current_dir();
+    path = buf;
+    g_free (buf);
+    path += "/";
+    path += filename;
+    if (0 == access(path.c_str(), desired_mode))
+        return path;
+
+    return "";
 }

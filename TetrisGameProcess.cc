@@ -1,4 +1,4 @@
-/*  $Id: TetrisGameProcess.cc,v 1.6.2.3 2000/01/08 15:08:28 olaf Exp $ */
+/*  $Id: TetrisGameProcess.cc,v 1.6.2.4 2000/01/12 12:45:01 olaf Exp $ */
 
 /*  GTris
  *  $Name:  $
@@ -81,7 +81,7 @@ CTetrisGameProcess::CTetrisGameProcess(GtkBrickViewer* PlayField, GtkBrickViewer
     m_basiccols[1] = RGB(0,0xffff,0);
     m_basiccols[2] = RGB(0,0,0xffff);
     m_basiccols[3] = RGB(0,0xffff,0xffff);
-    m_basiccols[4] = RGB(0xffff,0,0xff);
+    m_basiccols[4] = RGB(0xffff,0,0xffff);
     m_basiccols[5] = RGB(0xffff,0xffff,0);
     m_basiccols[6] = RGB(0xffff,0xffff,0xffff);
 
@@ -96,12 +96,9 @@ CTetrisGameProcess::CTetrisGameProcess(GtkBrickViewer* PlayField, GtkBrickViewer
 void CTetrisGameProcess::on_playfield_realized
     (GtkWidget* playfield, CTetrisGameProcess* static_this)
 {
-//     GdkColormap* cm = gdk_window_get_colormap(playfield->window);
-//     gdk_color_alloc (cm, &static_this->CL_BLACK);
-//     gdk_color_alloc (cm, &static_this->CL_WHITE);
-//     for (int i=0; i<static_this->m_nbasiccols; i++)
-//         gdk_color_alloc (cm, &static_this->m_basiccols[i]);
-
+     GdkColormap* cm = gdk_window_get_colormap(playfield->window);
+     gdk_color_alloc (cm, &static_this->CL_BLACK);
+     gdk_color_alloc (cm, &static_this->CL_WHITE);
 }
 
 CTetrisGameProcess::~CTetrisGameProcess()
@@ -110,15 +107,6 @@ CTetrisGameProcess::~CTetrisGameProcess()
 }
 
 
-//TODO: Will die Map (m_allocatedColors) auch den operator== auf dem Elementtypen (GdkColor)
-//haben? Wenn ja, gibt es hier ein Problem, da dieser (folgende) operator<
-//das pixel-Feld von GdkColor nicht beachtet, der compilergenerierte operator==
-//(element-by-element-compare) aber schon. ==> Es koennten Situationen auftreten, in denen
-//trotz (a<b)==false und (b<a)==false (a==b)==false waere
-//(naemlich dann, wenn die rgb-Werte gleich, die pixel-Werte aber unterschiedlich sind).
-//pixel-Feld in compare_colors mit hineinnehmen waere nicht so gut, das dieser Wert von gdk_color_alloc
-//ziemlich "willkürlich" (fuer den Benutzer) geaendert wird. Man muesste sicherstellen, dass diese
-//geaenderten Pixelwerte nicht in m_allocatedColors landen. 
 bool operator< (const GdkColor& c1, const GdkColor& c2)
 {
     if (c1.red != c2.red)
@@ -134,31 +122,27 @@ bool operator< (const GdkColor& c1, const GdkColor& c2)
     }
 }
 
-void CTetrisGameProcess::AllocateColor (const GdkColor& cl, int number)
+void CTetrisGameProcess::AllocatePlayfieldColor (GdkColor* cl, int number)
 {
-    map<GdkColor,int>::iterator pCol = m_allocatedColors.find (cl);
+    g_return_if_fail (GTK_WIDGET_REALIZED(GTK_WIDGET(m_bvPlayField)));
+
+    map<GdkColor,int>::iterator pCol = m_allocatedColors.find (*cl);
     if (pCol == m_allocatedColors.end())
     {
-        m_allocatedColors[cl] = number;
-        GdkColor writeable_cl = cl;  //Kopie erzeugen wg. const und damit (siehe obiges TODO)
-                                     //der Pixelwert der uebergenenen Variable cl nicht geaendert wird
-        gdk_color_alloc (gdk_window_get_colormap(GTK_WIDGET(m_bvPlayField)->window),
-                         &writeable_cl);
-        //TODO: writeable_cl ist --wie eigentlich fast alle Farbwerte hier-- nur temporaer
-        //(wird beim Verlassen dieses Blocks geloescht)
-        //ist das ein Problem fuer gdk_color_alloc?
-        //wenn ja, muesste man gdk_color_alloc vielleicht doch direkt auf den Keys von m_allocatedColors
-        //arbeiten lassen. Dann aber wohl auch noch operator== fuer GdkColor redefinieren, sodass
-        //der Pixel-Wert dort nicht beachtet wird (damit die map nicht
-        //mit ihren Keys durcheinander kommt)
+        gdk_color_alloc (gdk_window_get_colormap(GTK_WIDGET(m_bvPlayField)->window),cl);
+        m_allocatedColors[*cl] = number;
     }
     else
+    {
+        *cl = pCol->first;
         pCol->second += number;
+    }
 }
 
-
-void CTetrisGameProcess::FreeColor (const GdkColor& cl, int number)
+void CTetrisGameProcess::FreePlayfieldColor (const GdkColor& cl, int number)
 {
+    g_return_if_fail (GTK_WIDGET_REALIZED(GTK_WIDGET(m_bvPlayField)));
+
     map<GdkColor,int>::iterator pCol = m_allocatedColors.find (cl);
     pCol->second -= number;
     if (pCol->second == 0)
@@ -168,6 +152,20 @@ void CTetrisGameProcess::FreeColor (const GdkColor& cl, int number)
                                   &writeable_cl,1);
         m_allocatedColors.erase (cl);
     }
+}
+
+void CTetrisGameProcess::FreeAllAllocatedPlayfieldColors ()
+{
+    g_return_if_fail (GTK_WIDGET_REALIZED(GTK_WIDGET(m_bvPlayField)));
+
+    GdkColormap* cm = gdk_window_get_colormap(GTK_WIDGET(m_bvPlayField)->window);
+    for (map<GdkColor,int>::iterator pCol = m_allocatedColors.begin();
+         pCol != m_allocatedColors.end(); pCol++)
+    {
+        GdkColor nonconst_cl = pCol->first;
+        gdk_colormap_free_colors (cm,&nonconst_cl,1);
+    }
+    m_allocatedColors.clear();
 }
 
 
@@ -273,7 +271,7 @@ void CTetrisGameProcess::DropDownCurrentStone (void)
     for (map<GdkColor,int>::iterator it = colors2bfreed.begin();
          it != colors2bfreed.end(); it++)
     {
-        FreeColor (it->first,it->second);
+        FreePlayfieldColor (it->first,it->second);
     }
 
     m_score += inc_stone+depth*inc_drop1line+no_lines*inc_line;
@@ -282,13 +280,17 @@ void CTetrisGameProcess::DropDownCurrentStone (void)
     current_stone.valid=FALSE;
 }
 
-//TODO: Zur Performance - Verbesserung in DropDownCurrentStone:
-// - Tabelle verwalten, die fuer jede Zeile die Anzahl der noch
-//   zur vollen Linie fehlenden Steine gespeichert wird (die laesst
-//   sich einfach bei jedem neuen Stein updaten => man kann schneller
-//   die vollen Linien finden).
-// - evtl. den Inhalt des Spielfeldes nicht bei jedem DropDownCurrentStone - Aufruf
-//   neu mit GetContents() holen, sondern ihn zwischenspeichern
+//TODO: Performance - Verbesserung und Vereinfachungen in DropDownCurrentStone:
+//Man koennte die in allen Zeilen des Spielfelds enthaltenen Farben 
+//in einem PFExtend.y - stelligen Array aus map<GdkColor,int> 's abspeichern. :)
+//Dann braeuchte man noch in den stone_shapes ein Array, das fuer jede
+//Zeile der Steinform die Anzahl der dort enthaltenen Bricks speichert.
+//Wenn man nun in drop_down_current_stone einen Stein in den Haufen absetzt,
+//koennte man leicht die o.g. maps der betroffenen Zeilen mit den Eintraegen
+//aus dem Array der Steinform aktualisieren. So koennte man einerseits schnell
+//volle Linien finden und andererseits auch effizient die Anzahl der ggf. freizugebenen
+//Farben ( FreePlayfieldColor() ) ermitteln, ohne kompilzierte Konstrukte wie oben
+//(viele Schleifen, "colors2bfreed"-Map) verwenden zu muessen.
 
 
 bool CTetrisGameProcess::FitsInPlayfield (/*const*/ tetr_stone& tstone)
@@ -338,14 +340,14 @@ void CTetrisGameProcess::SetCurrentStone (const tetr_stone& new_one)
              current_stone.position.y,
              CL_BLACK);
         if (!no_allocs)
-            FreeColor (current_stone.colour, current_stone.shape.no_points);
+            FreePlayfieldColor (current_stone.colour, current_stone.shape.no_points);
     }
 
     current_stone = new_one;
     current_stone.valid = TRUE;
 
     if (!no_allocs)
-        AllocateColor (current_stone.colour, current_stone.shape.no_points);
+        AllocatePlayfieldColor (&current_stone.colour, current_stone.shape.no_points);
     gtk_brick_viewer_PasteShape
         (m_bvPlayField,
          current_stone.shape,
@@ -396,30 +398,21 @@ bool CTetrisGameProcess::StepForth ()
                 if (-curr_point->y>maxy) maxy=-curr_point->y;
             current_stone.position.y=maxy;
 
-            //TODO: StoneColorRange::scrWide (viele Steinfarben) noch nicht implementiert
-            //(verhaelt sich bisher genauso wie scrBasic)
-            //Problem: Jede Farbe muss vor ihrer Benutzung 'allokiert' werden (gdk_color_alloc)
-            //bei scrBasic geht das, da nur begrenzte Anzahl (7) von Farben
-            // ==> Allokierung in CTetrisGameProcess::on_playfield_realized
-            //bei scrWide koennen aber praktisch unendlich viele Farben auftreten
-            //Moegliche Loesung: Tabelle verwalten, die fuer jede benutze Farbe die aktuelle Anzahl der
-            //Bricks mit dieser Farbe speichert. Geht der Wert fuer eine Farbe in dieser Tabelle auf 0,
-            //kann die Farbe mit gdk_color_free wieder freigegeben werden.
             GdkColor c;
             switch (m_StoneColorRange)
             {
             case scrWide:
-                /*
-                c = RGB(0x100 * rand()*0x100/(RAND_MAX+1),
-                        0x100 * rand()*0x100/(RAND_MAX+1),
-                        0x100 * rand()*0x100/(RAND_MAX+1));
+                //TODO: Das ist nicht wirklich portabel, weil RAND_MAX auf
+                //verschiedenen Plattformen unterschiedliche gross sein kann.
+                c = RGB(rand()/(RAND_MAX/0x10000+1),
+                        rand()/(RAND_MAX/0x10000+1),
+                        rand()/(RAND_MAX/0x10000+1));
                 //Farbe zu dunkel?
                 if (((unsigned)c.red)+c.green+c.blue < 50000)
                     //TODO: fiese  Konstruktion, die einen der 3 RGB-Werte
                     //auf 0xffff setzt. Geht nur, wenn red der erste Wert in GdkColor ist
-                    *((&c.red)+rand()*3/(RAND_MAX+1)) = 0xffff;
+                    *((&c.red)+rand()/(RAND_MAX/3+1)) = 0xffff;
                 break;
-                */
             default:
             case scrBasic:
                 c = m_basiccols[rand()/20*m_nbasiccols/(RAND_MAX/20+1)];
@@ -509,6 +502,7 @@ void CTetrisGameProcess::StopGame ()
 void CTetrisGameProcess::StartNewGame ()
 {
     gtk_brick_viewer_FillAll (m_bvPlayField,CL_BLACK);
+    FreeAllAllocatedPlayfieldColors();
     next_shape = NULL;
     current_stone.valid = false;
     m_score = m_lines = 0;

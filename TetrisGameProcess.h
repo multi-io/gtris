@@ -1,4 +1,4 @@
-/*  $Id: TetrisGameProcess.h,v 1.2.4.2 2000/01/08 15:08:29 olaf Exp $ */
+/*  $Id: TetrisGameProcess.h,v 1.2.4.3 2000/01/12 12:45:01 olaf Exp $ */
 
 /*  GTris
  *  $Name:  $
@@ -81,8 +81,9 @@ private:
 
     std::map<GdkColor,int> m_allocatedColors;
 
-    void AllocateColor (const GdkColor& cl, int number);
-    void FreeColor (const GdkColor& cl, int number);
+    void AllocatePlayfieldColor (GdkColor* cl, int number=1);
+    void FreePlayfieldColor (const GdkColor& cl, int number=1);
+    void FreeAllAllocatedPlayfieldColors();
 
     static void on_playfield_realized
         (GtkWidget* playfield, CTetrisGameProcess* static_this);

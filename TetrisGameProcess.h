@@ -2,12 +2,12 @@
 #define TETRISGAMEPROCESS_H
 
 #include "gtkbrickviewer.h"
-#include "types.h"
+#include "utils.h"
 
 
 struct tetr_stone     /* ein Tetris-Stein */
 {
-    CPoint position;           /* position relativ zur oberen, linken Ecke des SFeldes */
+    CPoint position;           /* position relativ zur oberen, linken Ecke des Spielfeldes */
     struct stone_shape shape;  /* Form des Steins */
     GdkColor colour;           /* Farbe des Steins */
     bool valid;                /* Info, ob Stein guetig ist */
@@ -34,37 +34,45 @@ private:
 
     NotifyFunc GameEndNotify, ScoreChangeNotify;
 
-    void drop_down (void);
-    bool does_fit_in_pfield (struct tetr_stone tstone);
+    void DropDownCurrentStone (void);
+    bool FitsInPlayfield (tetr_stone& tstone);
     bool PointInHeap (int col, int row);
-    void fade_into (struct tetr_stone new_one);
-    void RepaintCurrentStone();
+    void SetCurrentStone (const tetr_stone& new_one);
 
     bool GameRunning;
 
+    GdkColor CL_BLACK,CL_WHITE;
+
+    GdkColor* m_basiccols;
+    static const int m_nbasiccols;
+
+    static void on_playfield_realized
+        (GtkWidget* playfield, CTetrisGameProcess* static_this);
+
 public:
+    //Konstruktor
+    //PlayField, NextField sind die GtkBrickViewer, in denen das Spiel dargestellt wird
     CTetrisGameProcess(GtkBrickViewer* PlayField, GtkBrickViewer* NextField);
     virtual ~CTetrisGameProcess();
 
-    const CPoint PFExtend;  //Spielfeld-Ausmass
+    const CPoint PFExtend;  //Spielfeld-Ausmasse
 
     StoneColorRange m_StoneColorRange;
 
-    void StepForth ();
+    //StepForth: Spiel einen Schritt weitersetzen
+    //Rueckgabe false, falls Spielende
+    bool StepForth ();
+    //Tastendruck verarbeiten
     void ProcessKey(unsigned Key);
 
-    void SetGameEndNotify (NotifyFunc f)
-    { GameEndNotify = f; }
-    void SetScoreChangeNotify (NotifyFunc f)
-    { ScoreChangeNotify = f; }
-
+    //Spiel anhalten
     void StopGame ();
+    //Spiel neustarten
     void StartNewGame ();
     bool IsGameRunning ()
     { return GameRunning; }
 
-                            //Punktgutschriften fuer
-    static const int 
+    static const int      //Punktgutschriften fuer
         inc_stone,        // 1 abgesetzten Tetris-Stein
         inc_drop1line,    // "Abwerfen" (SPACE) pro Linie
         inc_line;         // 1 volle Linie

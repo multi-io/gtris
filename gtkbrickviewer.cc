@@ -1,6 +1,7 @@
 #include "gtkbrickviewer.h"
-#include "types.h"
+#include "utils.h"
 
+#include <stdio.h>
 
 static GtkWidgetClass* parent_class = (GtkWidgetClass*)NULL;
 
@@ -147,7 +148,6 @@ void gtk_brick_viewer_SetBrickSize (GtkBrickViewer* bv, int s)
     if (GTK_WIDGET_REALIZED (widget))
     {
         gdk_window_resize (widget->window, s * bv->m_Cols, s * bv->m_Rows); 
-//        Invalidate ();
     }
 }
 
@@ -207,11 +207,14 @@ void gtk_brick_viewer_PasteShape (GtkBrickViewer* bv, stone_shape& shape, int co
 
 
 void gtk_brick_viewer_PasteRect (GtkBrickViewer* bv, GdkColor** rect, int width, int height,
-                              int colOrig, int rowOrig)
+                                 int colOrig, int rowOrig)
 {
+    GdkColormap* cm = gdk_window_get_colormap (GTK_WIDGET(bv)->window);
     for (int row = 0; row < height; row++)
         for (int col = 0; col < width; col++)
+        {
             bv->m_Contents[colOrig + col][rowOrig + row] = rect[row][col];
+        }
 
     gtk_widget_draw (GTK_WIDGET(bv),(GdkRectangle*)NULL);
 }
@@ -278,7 +281,7 @@ static void gtk_brick_viewer_realize (GtkWidget *widget)
 
 
 static void gtk_brick_viewer_size_request (GtkWidget      *widget,
-                       GtkRequisition *requisition)
+                                           GtkRequisition *requisition)
 {
     GtkBrickViewer* bv = GTK_BRICK_VIEWER(widget);
     requisition->width  = bv->m_BrickSize * bv->m_Cols;
@@ -289,7 +292,7 @@ static void gtk_brick_viewer_size_request (GtkWidget      *widget,
 
 
 static void gtk_brick_viewer_size_allocate (GtkWidget     *widget,
-                        GtkAllocation *allocation)
+                                            GtkAllocation *allocation)
 {
     g_return_if_fail (widget != NULL);
     g_return_if_fail (GTK_IS_BRICK_VIEWER (widget));
@@ -318,46 +321,28 @@ static gint gtk_brick_viewer_expose (GtkWidget* widget, GdkEventExpose* event)
 
     GtkBrickViewer* bv = GTK_BRICK_VIEWER(widget);
 
-    /*    gdk_window_clear_area (widget->window,
-                           0, 0,
-                           widget->allocation.width,
-                           widget->allocation.height);
-    */
-
     GdkRectangle& rect = event->area;
 
     int m_BrickSize = bv->m_BrickSize;
 
     int minCol = rect.x / m_BrickSize, minRow = rect.y / m_BrickSize,
         maxCol = (rect.x+rect.width) / m_BrickSize, maxRow = (rect.y+rect.height) / m_BrickSize;
-    
+
     if (maxCol >= bv->m_Cols) maxCol = bv->m_Cols-1;
     if (maxRow >= bv->m_Rows) maxRow = bv->m_Rows-1;
 
     for (int col = minCol; col <= maxCol; col++)
         for (int row = minRow; row <= maxRow; row++)
         {
+            GdkGCValues values;
             GdkColor cl = bv->m_Contents[col][row];
-            bool isBlack = (cl.red==0 && cl.green==0 && cl.blue==0);
-            gdk_draw_rectangle (widget->window,
-                                isBlack? widget->style->bg_gc[widget->state] : widget->style->fg_gc[widget->state],
-                                TRUE,
+            values.foreground = bv->m_Contents[col][row];
+            GdkGC* gc = gdk_gc_new_with_values (widget->window,&values,GDK_GC_FOREGROUND);
+            gdk_draw_rectangle (widget->window,gc,TRUE,
                                 col * m_BrickSize, row * m_BrickSize,
                                 m_BrickSize, m_BrickSize);
+            gdk_gc_destroy (gc);
         }
 
     return FALSE;
 }
-
-
-/*
-int gtk_brick_viewer_OnCreate(GtkBrickViewer* bv, LPCREATESTRUCT lpCreateStruct) 
-{
-	if (CWnd::OnCreate(lpCreateStruct) == -1)
-		return -1;
-
-    SetBrickSize (m_BrickSize);
-
-	return 0;
-}
-*/

@@ -1,4 +1,4 @@
-#include "types.h"
+#include "utils.h"
 
 
 GdkColor RGB(gushort r, gushort g, gushort b)

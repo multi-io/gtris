@@ -1,8 +1,8 @@
 #include <gtk/gtk.h>
-#include <string>
 #include <stdio.h>
+#include <string>
 #include "gtkbrickviewer.h"
-#include "types.h"
+#include "utils.h"
 #include "TetrisGameProcess.h"
 #include "HighscoresManager.h"
 #include "options.h"
@@ -31,30 +31,31 @@ static string m_HscUserName;
 
 static uint timeout_tag;
 static bool timer_installed = false;
-const timer_priority = -10;
 
-static void InitStatusbars (GtkStatusbar** sbLevel, GtkStatusbar** sbScore, GtkStatusbar** sbLines);
-static void UpdateStatusbars ();
+static void CreateStatusbar (GtkWidget** statusbar);
+static void UpdateScoreDisplay();
+static void UpdateLinesDisplay();
+static void UpdateLevelDisplay();
 
 static void OnKeyPressed(GtkWidget*, GdkEventKey* event, gpointer);
-static void OnGameStop(GtkWidget*, gpointer);
-static void GameEndNotify ();
+static void OnGameStop();
 
-static void create_menu_and_toolbar( GtkWidget  *window, GtkWidget **menubar, GtkWidget **toolbar );
+static void CreateMenuAndToolbar( GtkWidget  *window, GtkWidget **menubar, GtkWidget **toolbar );
 
 static gint delete_wnd_event
     ( GtkWidget*, GdkEvent, gpointer )
 {
-    OnGameStop(NULL,NULL);
+    OnGameStop();
     if (m_pGameProcess->IsGameRunning())
         return TRUE;
 
     if (!m_pHighscoresManager->SaveToFile (m_HscFile.c_str()))
     {
-        if (MB_NO == MsgBox
-            ("Warning", "Error while saving the highscores file.\n\
-                         Path of this file can be set via Options/Game Options.\n\
-                         Quit Game?", MB_YESNO))
+        if (MB_YES != MsgBox
+            ("Warning",
+"Error while saving the highscores file.\n\
+Path of this file can be set via Options/Game Options.\n\
+Quit Game?", MB_YESNO))
             return TRUE;
     }
 
@@ -66,12 +67,14 @@ static void destroy_wnd_event (GtkWidget*, gpointer)
     gtk_main_quit ();
 }
 
-static void OnGameExit(GtkWidget*, gpointer) 
+static void OnGameExit() 
 {
     if (!delete_wnd_event(NULL,GdkEvent(),NULL))
         destroy_wnd_event (NULL,NULL);
 }
 
+
+static GtkWidget* m_mainwnd;
 
 
 int main (int argc, char* argv[])
@@ -84,8 +87,6 @@ int main (int argc, char* argv[])
     m_bvNextField = GTK_BRICK_VIEWER(gtk_brick_viewer_new (NextFieldSize.x,NextFieldSize.y,15));
 
     m_pGameProcess = new CTetrisGameProcess (m_bvPlayField, m_bvNextField);
-
-    m_pGameProcess->SetGameEndNotify (GameEndNotify);
 
     GamePaused = false;
     m_Level =  m_NewLevel = 0;
@@ -114,20 +115,20 @@ int main (int argc, char* argv[])
 
     m_pHighscoresManager->LoadFromFile (m_HscFile.c_str());
 
-    GtkWidget* wnd;
-    wnd = gtk_window_new (GTK_WINDOW_TOPLEVEL);
-    gtk_window_set_title (GTK_WINDOW(wnd),"GTris");
+    m_mainwnd = gtk_window_new (GTK_WINDOW_TOPLEVEL);
 
-    gtk_signal_connect (GTK_OBJECT (wnd), "delete_event", GTK_SIGNAL_FUNC (delete_wnd_event), NULL);
-    gtk_signal_connect (GTK_OBJECT(wnd), "destroy", GTK_SIGNAL_FUNC(destroy_wnd_event), NULL);
+    gtk_window_set_title (GTK_WINDOW(m_mainwnd),"GTris");
+
+    gtk_signal_connect (GTK_OBJECT (m_mainwnd), "delete_event", GTK_SIGNAL_FUNC (delete_wnd_event), NULL);
+    gtk_signal_connect (GTK_OBJECT(m_mainwnd), "destroy", GTK_SIGNAL_FUNC(destroy_wnd_event), NULL);
 
     GtkVBox* main_vbox = GTK_VBOX(gtk_vbox_new (FALSE, 1));
     gtk_container_border_width (GTK_CONTAINER(main_vbox), 1);
-    gtk_container_add (GTK_CONTAINER(wnd), GTK_WIDGET(main_vbox));
+    gtk_container_add (GTK_CONTAINER(m_mainwnd), GTK_WIDGET(main_vbox));
 
     GtkWidget* menubar;
     GtkWidget* toolbar;
-    create_menu_and_toolbar (wnd, &menubar, &toolbar);
+    CreateMenuAndToolbar (m_mainwnd, &menubar, &toolbar);
     GtkWidget* menuhb = gtk_handle_box_new ();
     GtkWidget* toolhb = gtk_handle_box_new ();
     gtk_box_pack_start ( GTK_BOX (main_vbox), menuhb, FALSE, FALSE, 0 );
@@ -142,26 +143,17 @@ int main (int argc, char* argv[])
     GtkHBox* centerBox = GTK_HBOX(gtk_hbox_new(FALSE,0));
     gtk_box_pack_start (GTK_BOX(main_vbox), GTK_WIDGET(centerBox), FALSE, TRUE, 0);
 
-    GtkHBox* statusBox = GTK_HBOX(gtk_hbox_new(FALSE,0));
-    gtk_box_pack_start (GTK_BOX(main_vbox), GTK_WIDGET(statusBox), FALSE, TRUE, 0);
-    gtk_widget_show (GTK_WIDGET(statusBox));
-
-    GtkStatusbar *sbLevel, *sbScore, *sbLines;
-    InitStatusbars (&sbLevel, &sbScore, &sbLines);
-    gtk_box_pack_start (GTK_BOX(statusBox), GTK_WIDGET(sbScore), FALSE, TRUE, 0);
-    gtk_box_pack_start (GTK_BOX(statusBox), GTK_WIDGET(sbLines), FALSE, TRUE, 0);
-    gtk_box_pack_start (GTK_BOX(statusBox), GTK_WIDGET(sbLevel), FALSE, TRUE, 0);
-    gtk_widget_show (GTK_WIDGET(sbScore));
-    gtk_widget_show (GTK_WIDGET(sbLines));
-    gtk_widget_show (GTK_WIDGET(sbLevel));
-
+    GtkWidget* statusbar;
+    CreateStatusbar (&statusbar);
+    gtk_box_pack_start (GTK_BOX(main_vbox), GTK_WIDGET(statusbar), FALSE, TRUE, 0);
+    gtk_widget_show (GTK_WIDGET(statusbar));
 
     GtkWidget* sep = gtk_vseparator_new();
     gtk_box_pack_start (GTK_BOX(centerBox),GTK_WIDGET(m_bvPlayField),TRUE,TRUE,0);
     gtk_box_pack_start (GTK_BOX(centerBox),sep,TRUE,TRUE,0);
     gtk_box_pack_start (GTK_BOX(centerBox),GTK_WIDGET(m_bvNextField),TRUE,TRUE,0);
 
-    gtk_signal_connect (GTK_OBJECT(wnd), "key_press_event", GTK_SIGNAL_FUNC(OnKeyPressed), NULL);
+    gtk_signal_connect (GTK_OBJECT(m_mainwnd), "key_press_event", GTK_SIGNAL_FUNC(OnKeyPressed), NULL);
 
     gtk_widget_show (GTK_WIDGET(m_bvPlayField));
     gtk_widget_show (GTK_WIDGET(m_bvNextField));
@@ -169,7 +161,12 @@ int main (int argc, char* argv[])
     gtk_widget_show (GTK_WIDGET(centerBox));
     gtk_widget_show (GTK_WIDGET(menubar));
     gtk_widget_show (GTK_WIDGET(main_vbox));
-    gtk_widget_show (wnd);
+
+    gtk_widget_show (m_mainwnd);
+
+    UpdateScoreDisplay();
+    UpdateLinesDisplay();
+    UpdateLevelDisplay();
 
     gtk_main ();
 
@@ -185,17 +182,7 @@ int main (int argc, char* argv[])
 }
 
 
-static gint OnTimeout (gpointer)
-{
-    if (!GamePaused)
-    {
-        gdk_threads_enter ();
-        m_pGameProcess->StepForth ();
-        UpdateStatusbars();
-        gdk_threads_leave ();
-    }
-}
-
+static gint OnTimeout (gpointer);
 
 
 static void OnKeyPressed(GtkWidget*, GdkEventKey* event, gpointer) 
@@ -203,17 +190,19 @@ static void OnKeyPressed(GtkWidget*, GdkEventKey* event, gpointer)
     if (!GamePaused)
     {
         m_pGameProcess->ProcessKey (event->keyval);
-        UpdateStatusbars();
+        UpdateScoreDisplay();
+        UpdateLinesDisplay();
     }
 }
 
 
 static void OnGameNew();
-static void OnGameStop(GtkWidget*, gpointer);
-static void OnGameRun(GtkWidget*, gpointer);
-static void OnGamePause(GtkWidget*, gpointer);
-static void OnViewHighscores(GtkWidget*, gpointer);
-static void OnOptionsGameOptions(GtkWidget*, gpointer);
+static void OnGameRun();
+static void OnGamePause();
+static void OnViewHighscores();
+static void OnOptionsGameOptions();
+
+static void OnTest1();
 
 static GtkMenuItem* m_mniGameNew;
 static GtkMenuItem* m_mniGameRun;
@@ -230,14 +219,18 @@ struct ToolbarItem
     GtkWidget* widget;
 };
 
+/* TODO: Die Casts nach GtkSignalFunc sind noetig, da egcs (1.0.2) sonst Warnungen ausspuckt,
+ * obwohl die Signaturen der Funktionen exakt mit GtkSignalFunc uebereinstimmen => ??
+ */
+
 static ToolbarItem m_tbitems[] =
 {
-    {"New","new game",new_xpm,&OnGameNew,NULL},
-    {"Run","run game",run_xpm,&OnGameRun,NULL},
-    {"Stop","stop game",stop_xpm,&OnGameStop,NULL},
-    {"Pause","pause game",pause_xpm,&OnGamePause,NULL},
-    {"Options","game options",options_xpm,&OnOptionsGameOptions,NULL},
-    {"Highscores","show/hide highscores",highscores_xpm,&OnViewHighscores,NULL}
+    {"New","new game",new_xpm,(GtkSignalFunc)OnGameNew,NULL},
+    {"Run","run game",run_xpm,(GtkSignalFunc)OnGameRun,NULL},
+    {"Stop","stop game",stop_xpm,(GtkSignalFunc)OnGameStop,NULL},
+    {"Pause","pause game",pause_xpm,(GtkSignalFunc)OnGamePause,NULL},
+    {"Options","game options",options_xpm,(GtkSignalFunc)OnOptionsGameOptions,NULL},
+    {"Highscores","show/hide highscores",highscores_xpm,(GtkSignalFunc)OnViewHighscores,NULL}
 };
 
 static int m_ntbitems = sizeof(m_tbitems)/sizeof(m_tbitems[0]);
@@ -252,23 +245,27 @@ typedef enum
     i_tbiHighscores
 };
 
+/* TODO: s.o. */
+
 static GtkItemFactoryEntry menu_items[] = {
-  { "/_Game",        (char*)NULL,  (GtkItemFactoryCallback)NULL, 0, "<Branch>" },
-  { "/Game/_New",    "<control>N", OnGameNew,   0, NULL },
-  { "/Game/_Run",    "F6", OnGameRun,   0, NULL },
-  { "/Game/_Stop",   "F8", OnGameStop,  0, NULL },
-  { "/Game/_Pause",  "F5",  OnGamePause, 0, NULL },
+  { "/_Game",        (char*)NULL,  NULL, 0, "<Branch>" },
+  { "/Game/_New",    "<control>N", (GtkItemFactoryCallback)OnGameNew,   0, NULL },
+  { "/Game/_Run",    "F6", (GtkItemFactoryCallback)OnGameRun,   0, NULL },
+  { "/Game/_Stop",   "F8", (GtkItemFactoryCallback)OnGameStop,  0, NULL },
+  { "/Game/_Pause",  "F5",  (GtkItemFactoryCallback)OnGamePause, 0, NULL },
   { "/Game/",  (char*)NULL,  NULL, 0, "<Separator>" },
-  { "/Game/E_xit",  "<alt>F4",  OnGameExit, 0, NULL },
-  { "/_View",        (char*)NULL,  (GtkItemFactoryCallback)NULL, 0, "<Branch>" },
-  { "/View/_Highscores",  (char*)NULL,  OnViewHighscores, 0, "<ToggleItem>" },
-  { "/_Options",        (char*)NULL,  (GtkItemFactoryCallback)NULL, 0, "<Branch>" },
-  { "/Options/_Game Options",  (char*)NULL,  OnOptionsGameOptions, 0, NULL }
+  { "/Game/E_xit",  "<alt>F4",  (GtkItemFactoryCallback)OnGameExit, 0, NULL },
+  { "/_View",        (char*)NULL,  NULL, 0, "<Branch>" },
+  { "/View/_Highscores",  (char*)NULL,  (GtkItemFactoryCallback)OnViewHighscores, 0, "<ToggleItem>" },
+  { "/_Options",        (char*)NULL,  NULL, 0, "<Branch>" },
+  { "/Options/_Game Options",  (char*)NULL,  (GtkItemFactoryCallback)OnOptionsGameOptions, 0, NULL },
+  { "/_Test",        (char*)NULL,  NULL, 0, "<Branch>" },
+  { "/Test/Test _1",  (char*)NULL,  (GtkItemFactoryCallback)OnTest1, 0, NULL },
 };
 
 static void UpdateItems ();
 
-static void create_menu_and_toolbar( GtkWidget  *window, GtkWidget **menubar, GtkWidget **toolbar )
+static void CreateMenuAndToolbar( GtkWidget  *window, GtkWidget **menubar, GtkWidget **toolbar )
 {
     if (!GTK_WIDGET_REALIZED(GTK_WIDGET(window)))
         gtk_widget_realize (GTK_WIDGET(window));
@@ -330,23 +327,23 @@ static void UpdateItems ()
 }
 
 
-static void OnGameNew()
+static void OnGameNew(void)
 {
     if (m_pGameProcess->IsGameRunning())
-        if (MB_NO == MsgBox ("Warning", "Game still running. Proceed?", MB_YESNO))
+        if (MB_YES != MsgBox ("Warning", "Game still running. Proceed?", MB_YESNO))
             return;
 
     GamePaused = false;
     if (timer_installed)
         gtk_timeout_remove (timeout_tag);
     m_Level = m_NewLevel;
-    timeout_tag = g_timeout_add_full (timer_priority, 55 * (5 - m_Level), OnTimeout, NULL, NULL);
+    timeout_tag = gtk_timeout_add (55 * (5 - m_Level), OnTimeout, NULL);
     timer_installed = true;
     m_pGameProcess->StartNewGame ();
     UpdateItems ();
 }
 
-static void OnGameStop(GtkWidget*, gpointer)
+static void OnGameStop()
 {
     if (m_pGameProcess->IsGameRunning())
         if (MB_YES != MsgBox ("Warning", "Game still running. Proceed?", MB_YESNO))
@@ -359,7 +356,7 @@ static void OnGameStop(GtkWidget*, gpointer)
     UpdateItems ();
 }
 
-static void OnGameRun(GtkWidget*, gpointer) 
+static void OnGameRun() 
 {
     if (GamePaused)
         GamePaused = false;
@@ -369,48 +366,27 @@ static void OnGameRun(GtkWidget*, gpointer)
         if (timer_installed)
             gtk_timeout_remove (timeout_tag);
         m_Level = m_NewLevel;
-        timeout_tag = g_timeout_add_full (timer_priority, 55 * (5 - m_Level), OnTimeout, NULL, NULL);
+        timeout_tag = gtk_timeout_add (55 * (5 - m_Level), OnTimeout, NULL);
         timer_installed = true;
         m_pGameProcess->StartNewGame ();
     }
     UpdateItems ();
 }
 
-static void OnGamePause(GtkWidget*, gpointer) 
+static void OnGamePause() 
 {
     GamePaused = true;
     UpdateItems ();
 }
 
 
-static void OnViewHighscores(GtkWidget*, gpointer) 
+static void OnViewHighscores() 
 {
     m_pHighscoresManager->ShowDialog (m_pHighscoresManager->IsDialogVisible()?false:true);
 }
 
 
-static void GameEndNotify ()
-{
-    UpdateItems ();
-    int score = m_pGameProcess->GetScore ();
-    if (score > m_pHighscoresManager->GetLeastScore (m_Level))
-    {
-        THscEntry hscentry;
-        hscentry.score = score;
-        hscentry.lines = m_pGameProcess->GetLines ();
-        time (&hscentry.date);
-        hscentry.name = m_HscUserName;
-
-        if (HighscoresManager::HighscoresUserQuery (&hscentry, m_Level))
-        {
-            m_pHighscoresManager->AddNewEntry (hscentry,m_Level);
-            m_HscUserName = hscentry.name;
-        }
-    }
-}
-
-
-static void OnOptionsGameOptions(GtkWidget*, gpointer) 
+static void OnOptionsGameOptions() 
 {
     int level = m_Level;
     CTetrisGameProcess::StoneColorRange scr = m_pGameProcess->m_StoneColorRange;
@@ -427,66 +403,168 @@ static void OnOptionsGameOptions(GtkWidget*, gpointer)
             m_HscFile = hscfile;
             m_pHighscoresManager->LoadFromFile (m_HscFile.c_str());
         }
+        UpdateLevelDisplay();
     }
 }
 
 
 
-static GtkStatusbar
-    *m_sbLevel, *m_sbScore, *m_sbLines;
+static GtkLabel
+     *m_lblScore, *m_lblLines, *m_lblLevel;
 
-static unsigned m_cidLevel,m_midLevel;
-static unsigned m_cidScore,m_midScore;
-static unsigned m_cidLines,m_midLines;
-
-static void InitStatusbars (GtkStatusbar** sbLevel, GtkStatusbar** sbScore, GtkStatusbar** sbLines)
+static void CreateStatusbar (GtkWidget** statusbar)
 {
-    m_sbLevel = GTK_STATUSBAR( gtk_statusbar_new () );
-    m_cidLevel = gtk_statusbar_get_context_id (m_sbLevel, "level_ctx");
-    m_midLevel = gtk_statusbar_push (m_sbLevel, m_cidLevel, "         ");
-    *sbLevel = m_sbLevel;
+    *statusbar = gtk_hbox_new(FALSE,0);
 
-    m_sbScore = GTK_STATUSBAR( gtk_statusbar_new () );
-    m_cidScore = gtk_statusbar_get_context_id (m_sbScore, "score_ctx");
-    m_midScore = gtk_statusbar_push (m_sbScore, m_cidScore, "         ");
-    *sbScore = m_sbScore;
+    m_lblScore = GTK_LABEL( gtk_label_new ("") );
+    m_lblLines = GTK_LABEL( gtk_label_new ("") );
+    m_lblLevel = GTK_LABEL( gtk_label_new ("") );
 
-    m_sbLines = GTK_STATUSBAR( gtk_statusbar_new () );
-    m_cidLines = gtk_statusbar_get_context_id (m_sbLines, "lines_ctx");
-    m_midLines = gtk_statusbar_push (m_sbLines, m_cidLines, "         ");
-    *sbLines = m_sbLines;
+    GdkFont* fnt = GTK_WIDGET(m_lblScore)->style->font;
+
+    GtkWidget* frm = gtk_frame_new(NULL);
+    gtk_frame_set_shadow_type( GTK_FRAME(frm), GTK_SHADOW_IN);
+    gtk_container_add (GTK_CONTAINER(frm),GTK_WIDGET(m_lblScore));
+    gtk_box_pack_start (GTK_BOX(*statusbar),frm,FALSE,FALSE,0);
+    gtk_widget_set_usize(frm,
+                         gdk_string_measure(fnt,"Score: 0000000000000"+3),
+                         20); //gdk_string_height(fnt,"Aq"+3)); //TODO: wie besser machen?
+    gtk_widget_show(frm);
+
+    frm = gtk_frame_new(NULL);
+    gtk_frame_set_shadow_type( GTK_FRAME(frm), GTK_SHADOW_IN);
+    gtk_container_add (GTK_CONTAINER(frm),GTK_WIDGET(m_lblLines));
+    gtk_box_pack_start (GTK_BOX(*statusbar),frm,FALSE,FALSE,0);
+    gtk_widget_set_usize(frm,
+                         gdk_string_measure(fnt,"Lines: 0000000000"+3),
+                         20);
+    gtk_widget_show(frm);
+
+    frm = gtk_frame_new(NULL);
+    gtk_frame_set_shadow_type( GTK_FRAME(frm), GTK_SHADOW_IN);
+    gtk_container_add (GTK_CONTAINER(frm),GTK_WIDGET(m_lblLevel));
+    gtk_box_pack_end (GTK_BOX(*statusbar),frm,FALSE,FALSE,0);
+    gtk_widget_set_usize(frm,
+                         gdk_string_measure(fnt,"Level 000000"+3),
+                         20);
+    gtk_widget_show(frm);
+
+    gtk_widget_show (GTK_WIDGET(m_lblLevel));
+    gtk_widget_show (GTK_WIDGET(m_lblScore));
+    gtk_widget_show (GTK_WIDGET(m_lblLines));
 }
 
-static void UpdateStatusbars ()
+
+static void UpdateScoreDisplay()
 {
-    static int
-        prevLevel = -1,
-        prevLines = -1,
-        prevScore = -1;
-
-    char buf[20];
-
-    if (m_Level != prevLevel)
+    static int prevVal = -1;
+    if (m_pGameProcess->GetScore() != prevVal)
     {
-        gtk_statusbar_remove (m_sbLevel, m_cidLevel, m_midLevel);
+        char buf[20];
+        sprintf (buf,"Score: %8i",m_pGameProcess->GetScore());
+        gtk_label_set_text (m_lblScore,buf);
+        prevVal = m_pGameProcess->GetScore();
+    }
+}
+
+static void UpdateLinesDisplay()
+{
+    static int prevVal = -1;
+    if (m_pGameProcess->GetLines() != prevVal)
+    {
+        char buf[20];
+        sprintf (buf,"Lines: %6i",m_pGameProcess->GetLines());
+        gtk_label_set_text (m_lblLines,buf);
+        prevVal = m_pGameProcess->GetLines();
+    }
+}
+
+static void UpdateLevelDisplay()
+{
+    static int prevVal = -1;
+    if (m_Level != prevVal)
+    {
+        char buf[20];
         sprintf (buf,"Level %i",m_Level);
-        m_midLevel = gtk_statusbar_push (m_sbLevel, m_cidLevel, buf);
-        prevLevel = m_Level;
+        gtk_label_set_text (m_lblLevel,buf);
+        prevVal = m_Level;
     }
+}
 
-    if (m_pGameProcess->GetScore() != prevScore)
-    {
-        gtk_statusbar_remove (m_sbScore, m_cidScore, m_midScore);
-        sprintf (buf,"Score: %i",m_pGameProcess->GetScore());
-        m_midScore = gtk_statusbar_push (m_sbScore, m_cidScore, buf);
-        prevScore = m_pGameProcess->GetScore();
-    }
 
-    if (m_pGameProcess->GetLines() != prevLines)
+static gint OnTimeout (gpointer)
+{
+    if (!GamePaused)
     {
-        gtk_statusbar_remove (m_sbLines, m_cidLines, m_midLines);
-        sprintf (buf,"Lines: %i",m_pGameProcess->GetLines());
-        m_midLines = gtk_statusbar_push (m_sbLines, m_cidLines, buf);
-        prevLines = m_pGameProcess->GetLines();
+        gdk_threads_enter ();
+        bool bGameEnded = ! m_pGameProcess->StepForth ();
+        UpdateScoreDisplay();
+        UpdateLinesDisplay();
+        gdk_threads_leave ();
+
+        if (bGameEnded)
+        {
+            UpdateItems ();
+            int score = m_pGameProcess->GetScore ();
+            if (score > m_pHighscoresManager->GetLeastScore (m_Level))
+            {
+                THscEntry hscentry;
+                hscentry.score = score;
+                hscentry.lines = m_pGameProcess->GetLines ();
+                time (&hscentry.date);
+                hscentry.name = m_HscUserName;
+
+                if (HighscoresManager::HighscoresUserQuery (&hscentry, m_Level))
+                {
+                    m_pHighscoresManager->AddNewEntry (hscentry,m_Level);
+                    m_HscUserName = hscentry.name;
+                }
+            }
+        }
     }
+    return TRUE;
+}
+
+
+
+#include <X11/Xlib.h>
+
+typedef struct
+{
+  GdkWindow window;
+  GdkWindow *parent;
+  Window xwindow;
+  Display *xdisplay;
+  gint16 x;
+  gint16 y;
+  guint16 width;
+  guint16 height;
+  guint8 resize_count;
+  guint8 window_type;
+  guint ref_count;
+  guint destroyed : 2;
+  guint mapped : 1;
+  guint guffaw_gravity : 1;
+
+  gint extension_events;
+
+  GList *filters;
+  GdkColormap *colormap;
+  GList *children;
+}
+wpriv;
+
+static void OnTest1()
+{
+    wpriv* priv = (wpriv*)(m_mainwnd->window);
+    XWindowAttributes wattr;
+    XGetWindowAttributes (priv->xdisplay, priv->xwindow, &wattr);
+    printf ("Von XGetWindowAttributes gelieferte Position: x=%i y=%i\n",wattr.x,wattr.y);
+
+    int x,y;
+    gdk_window_get_position (m_mainwnd->window,&x,&y);
+    gdk_window_move (m_mainwnd->window,x,y);
+
+    XGetWindowAttributes (priv->xdisplay, priv->xwindow, &wattr);
+    printf ("Von XGetWindowAttributes gelieferte Position: x=%i y=%i\n",wattr.x,wattr.y);
 }

@@ -3,19 +3,10 @@
 #include <stdio.h>
 
 
-static GtkDialog* m_dialog;
+static GtkWidget* m_dialog;
 
-static GtkRadioButton
-    *m_btnClBnW,
-    *m_btnClBasic,
-    *m_btnClWide;
-
-static GtkEntry* m_entryFileName;
-
-static GtkSpinButton* m_spbtnLevel;
-
-static void ok_click (GtkWidget*, gpointer);
-static void cancel_click (GtkWidget*, gpointer);
+static void on_ok_click (GtkWidget*, gpointer);
+static void on_cancel_click (GtkWidget*, gpointer);
 static gint on_dlg_delete ( GtkWidget*, GdkEvent, gpointer );
 
 static bool m_bOK;
@@ -23,87 +14,133 @@ static bool m_bOK;
 
 bool GetOptions (int* level, std::string* hscfile, CTetrisGameProcess::StoneColorRange* colorRange)
 {
-    printf ("GetOptions Anfang: %i\n",*level);
+    GtkWidget *dialog_vbox1;
+    GtkWidget *table2;
+    GtkWidget *frame1;
+    GtkWidget *vbox3;
+    GSList *btngrp_group = NULL;
+    GtkWidget *m_rbClBnW;
+    GtkWidget *m_rbClBasic;
+    GtkWidget *m_rbClWide;
+    GtkWidget *vbox4;
+    GtkWidget *accellabel1;
+    GtkObject *m_spbLevel_adj;
+    GtkWidget *m_spbLevel;
+    GtkWidget *m_entryHscFile;
+    GtkWidget *accellabel2;
+    GtkWidget *dialog_action_area1;
+    GtkWidget *m_btnOK;
+    GtkWidget *m_btnCancel;
 
-    m_dialog = GTK_DIALOG( gtk_dialog_new() );
-    gtk_window_set_title ( GTK_WINDOW(m_dialog), "Options");
+    m_dialog = gtk_dialog_new ();
+    gtk_signal_connect (GTK_OBJECT (m_dialog), "delete_event",
+                        GTK_SIGNAL_FUNC (on_dlg_delete),
+                        NULL);
+    gtk_window_set_title (GTK_WINDOW (m_dialog), "Options");
+    gtk_window_set_policy (GTK_WINDOW (m_dialog), TRUE, TRUE, FALSE);
 
-    GtkButton* b = GTK_BUTTON( gtk_button_new_with_label("OK") );
-    gtk_box_pack_start (GTK_BOX(m_dialog->action_area), GTK_WIDGET(b), FALSE, TRUE, 0);
-    gtk_signal_connect (GTK_OBJECT(b), "clicked",
-                        GTK_SIGNAL_FUNC(ok_click), NULL);
-    gtk_widget_show (GTK_WIDGET(b));
+    dialog_vbox1 = GTK_DIALOG (m_dialog)->vbox;
+    gtk_widget_show (dialog_vbox1);
 
-    b = GTK_BUTTON( gtk_button_new_with_label("Cancel") );
-    gtk_box_pack_start (GTK_BOX(m_dialog->action_area), GTK_WIDGET(b), FALSE, TRUE, 0);
-    gtk_signal_connect (GTK_OBJECT(b), "clicked",
-                        GTK_SIGNAL_FUNC(cancel_click), NULL);
-    gtk_widget_show (GTK_WIDGET(b));
+    table2 = gtk_table_new (3, 2, FALSE);
+    gtk_widget_show (table2);
+    gtk_box_pack_start (GTK_BOX (dialog_vbox1), table2, TRUE, TRUE, 0);
 
-    GtkTable* table = GTK_TABLE( gtk_table_new (5,2,FALSE) );
-    gtk_container_add (GTK_CONTAINER(m_dialog->vbox), GTK_WIDGET(table));
-    gtk_widget_show (GTK_WIDGET(table));
+    frame1 = gtk_frame_new ("Color Range");
+    gtk_widget_show (frame1);
+    gtk_table_attach (GTK_TABLE (table2), frame1, 0, 1, 0, 1,
+                      (GtkAttachOptions) (GTK_EXPAND | GTK_FILL),
+                      (GtkAttachOptions) (GTK_EXPAND | GTK_FILL), 0, 0);
+    gtk_widget_set_usize (frame1, 135, -2);
 
+    vbox3 = gtk_vbox_new (FALSE, 0);
+    gtk_widget_show (vbox3);
+    gtk_container_add (GTK_CONTAINER (frame1), vbox3);
 
-    m_btnClBnW = GTK_RADIO_BUTTON( gtk_radio_button_new_with_label (NULL,"black & white") );
+    m_rbClBnW = gtk_radio_button_new_with_label (btngrp_group, "black & white");
+    btngrp_group = gtk_radio_button_group (GTK_RADIO_BUTTON (m_rbClBnW));
+    gtk_widget_show (m_rbClBnW);
+    gtk_box_pack_start (GTK_BOX (vbox3), m_rbClBnW, TRUE, TRUE, 0);
 
-    GSList* group = gtk_radio_button_group (m_btnClBnW);
-    m_btnClBasic = GTK_RADIO_BUTTON( gtk_radio_button_new_with_label(group, "basic") );
-    group = gtk_radio_button_group (m_btnClBasic);
-    m_btnClWide  = GTK_RADIO_BUTTON( gtk_radio_button_new_with_label(group, "wide") );
+    m_rbClBasic = gtk_radio_button_new_with_label (btngrp_group, "basic");
+    btngrp_group = gtk_radio_button_group (GTK_RADIO_BUTTON (m_rbClBasic));
+    gtk_widget_show (m_rbClBasic);
+    gtk_box_pack_start (GTK_BOX (vbox3), m_rbClBasic, TRUE, TRUE, 0);
 
-    gtk_table_attach_defaults (table, GTK_WIDGET(m_btnClBnW),0,1,0,1);
-    gtk_table_attach_defaults (table, GTK_WIDGET(m_btnClBasic),0,1,1,2);
-    gtk_table_attach_defaults (table, GTK_WIDGET(m_btnClWide),0,1,2,3);
+    m_rbClWide = gtk_radio_button_new_with_label (btngrp_group, "wide");
+    btngrp_group = gtk_radio_button_group (GTK_RADIO_BUTTON (m_rbClWide));
+    gtk_widget_show (m_rbClWide);
+    gtk_box_pack_start (GTK_BOX (vbox3), m_rbClWide, TRUE, TRUE, 0);
 
-    gtk_widget_show (GTK_WIDGET(m_btnClBnW));
-    gtk_widget_show (GTK_WIDGET(m_btnClBasic));
-    gtk_widget_show (GTK_WIDGET(m_btnClWide));
+    vbox4 = gtk_vbox_new (FALSE, 0);
+    gtk_widget_show (vbox4);
+    gtk_table_attach (GTK_TABLE (table2), vbox4, 1, 2, 0, 1,
+                      (GtkAttachOptions) (GTK_EXPAND | GTK_FILL),
+                      (GtkAttachOptions) GTK_EXPAND, 10, 0);
 
+    accellabel1 = gtk_accel_label_new ("Level:");
+    gtk_widget_show (accellabel1);
+    gtk_box_pack_start (GTK_BOX (vbox4), accellabel1, TRUE, TRUE, 0);
+    gtk_misc_set_alignment (GTK_MISC (accellabel1), 1.93715e-07, 1);
 
-    GtkWidget* lbl = gtk_label_new ("Highscores File:");
-    gtk_table_attach_defaults (table, lbl,0,1,3,4);
-    gtk_widget_show (lbl);
+    m_spbLevel_adj = gtk_adjustment_new (1, 0, 4, 1, 10, 10);
+    m_spbLevel = gtk_spin_button_new (GTK_ADJUSTMENT (m_spbLevel_adj), 1, 0);
+    gtk_widget_show (m_spbLevel);
+    gtk_box_pack_start (GTK_BOX (vbox4), m_spbLevel, TRUE, TRUE, 0);
+    gtk_widget_set_usize (m_spbLevel, 71, -2);
 
-    m_entryFileName = GTK_ENTRY( gtk_entry_new_with_max_length (255) );
-    gtk_table_attach_defaults (table, GTK_WIDGET(m_entryFileName),0,2,4,5);
-    gtk_widget_show (GTK_WIDGET(m_entryFileName));
+    m_entryHscFile = gtk_entry_new ();
+    gtk_widget_show (m_entryHscFile);
+    gtk_table_attach (GTK_TABLE (table2), m_entryHscFile, 0, 2, 2, 3,
+                      (GtkAttachOptions) (GTK_EXPAND | GTK_FILL),
+                      (GtkAttachOptions) (GTK_EXPAND | GTK_FILL), 0, 0);
 
+    accellabel2 = gtk_accel_label_new ("Highscores File:");
+    gtk_widget_show (accellabel2);
+    gtk_table_attach (GTK_TABLE (table2), accellabel2, 0, 1, 1, 2,
+                      (GtkAttachOptions) (GTK_EXPAND | GTK_FILL),
+                      (GtkAttachOptions) (GTK_EXPAND | GTK_FILL), 0, 0);
+    gtk_misc_set_alignment (GTK_MISC (accellabel2), 1.93715e-07, 1);
 
-    lbl = gtk_label_new ("Level:");
-    gtk_table_attach_defaults (table, lbl,1,2,0,1);
-    gtk_widget_show (lbl);
+    dialog_action_area1 = GTK_DIALOG (m_dialog)->action_area;
+    gtk_widget_show (dialog_action_area1);
+    gtk_container_border_width (GTK_CONTAINER (dialog_action_area1), 10);
 
-    GtkAdjustment* adj = GTK_ADJUSTMENT( gtk_adjustment_new (0,0,4,1,4,1) );
-    m_spbtnLevel = GTK_SPIN_BUTTON( gtk_spin_button_new (adj, 0.5, 1) );
-    gtk_table_attach_defaults (table, GTK_WIDGET(m_spbtnLevel),1,2,1,2);
-    gtk_widget_show (GTK_WIDGET(m_spbtnLevel));
+    m_btnOK = gtk_button_new_with_label ("OK");
+    gtk_widget_show (m_btnOK);
+    gtk_box_pack_start (GTK_BOX (dialog_action_area1), m_btnOK, TRUE, TRUE, 0);
+    gtk_signal_connect (GTK_OBJECT (m_btnOK), "clicked",
+                        GTK_SIGNAL_FUNC (on_ok_click),
+                        NULL);
 
+    m_btnCancel = gtk_button_new_with_label ("Cancel");
+    gtk_widget_show (m_btnCancel);
+    gtk_box_pack_start (GTK_BOX (dialog_action_area1), m_btnCancel, TRUE, TRUE, 0);
+    gtk_signal_connect (GTK_OBJECT (m_btnCancel), "clicked",
+                        GTK_SIGNAL_FUNC (on_cancel_click),
+                        NULL);
 
-    GtkRadioButton* rb;
+    GtkWidget* rb;
     switch (*colorRange)
     {
     case CTetrisGameProcess::scrBlackWhite:
-        rb = m_btnClBnW;
+        rb = m_rbClBnW;
         break;
     case CTetrisGameProcess::scrBasic:
-        rb = m_btnClBasic;
+        rb = m_rbClBasic;
         break;
     case CTetrisGameProcess::scrWide:
-        rb = m_btnClWide;
+        rb = m_rbClWide;
         break;
     default:
-        rb = m_btnClBasic;
+        rb = m_rbClBasic;
         break;
     }
     gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON(rb), TRUE);
 
-    gtk_entry_set_text (m_entryFileName, hscfile->c_str());
+    gtk_entry_set_text (GTK_ENTRY(m_entryHscFile), hscfile->c_str());
 
-    gtk_spin_button_set_value (m_spbtnLevel,*level);
-
-    gtk_signal_connect (GTK_OBJECT (m_dialog), "delete_event",
-                        GTK_SIGNAL_FUNC (on_dlg_delete), NULL);
+    gtk_spin_button_set_value (GTK_SPIN_BUTTON(m_spbLevel),*level);
 
     gtk_widget_show (GTK_WIDGET(m_dialog));
 
@@ -114,24 +151,22 @@ bool GetOptions (int* level, std::string* hscfile, CTetrisGameProcess::StoneColo
     if (!m_bOK)
         return false;
 
-    if (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(m_btnClBnW)))
+    if (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(m_rbClBnW)))
         *colorRange = CTetrisGameProcess::scrBlackWhite;
-    else if (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(m_btnClBasic)))
+    else if (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(m_rbClBasic)))
         *colorRange = CTetrisGameProcess::scrBasic;
-    else if (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(m_btnClWide)))
+    else if (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(m_rbClWide)))
         *colorRange = CTetrisGameProcess::scrWide;
 
-    *hscfile = gtk_entry_get_text (m_entryFileName);
+    *hscfile = gtk_entry_get_text (GTK_ENTRY(m_entryHscFile));
 
-    *level = gtk_spin_button_get_value_as_int (m_spbtnLevel);
+    *level = gtk_spin_button_get_value_as_int (GTK_SPIN_BUTTON(m_spbLevel));
 
     gtk_widget_destroy (GTK_WIDGET(m_dialog));
-
-    printf ("GetOptions Ende: %i\n",*level);
 }
 
 
-static void ok_click (GtkWidget*, gpointer)
+static void on_ok_click (GtkWidget*, gpointer)
 {
     m_bOK = true;
     gtk_widget_hide (GTK_WIDGET(m_dialog));
@@ -139,7 +174,7 @@ static void ok_click (GtkWidget*, gpointer)
 }
 
 
-static void cancel_click (GtkWidget*, gpointer)
+static void on_cancel_click (GtkWidget*, gpointer)
 {
     m_bOK = false;
     gtk_widget_hide (GTK_WIDGET(m_dialog));
@@ -149,5 +184,6 @@ static void cancel_click (GtkWidget*, gpointer)
 
 static gint on_dlg_delete ( GtkWidget*, GdkEvent, gpointer )
 {
-    cancel_click (NULL,NULL);
+    on_cancel_click (NULL,NULL);
+    return TRUE;
 }

@@ -95,12 +95,7 @@ HighscoresManager::HighscoresManager()
     if (registry.QueryValue ("HscTab", iTab))
         gtk_notebook_set_page (m_notebook,iTab);
 
-    int x,y;
-    if (registry.QueryValue ("HscPosX", x) &&
-        registry.QueryValue ("HscPosY", y))
-    {
-        gtk_widget_set_uposition (GTK_WIDGET(m_dialog),x,y);
-    }
+    gtk_widget_realize (GTK_WIDGET(m_dialog));
 
     bool visible;
     if (registry.QueryValue ("HscVisible", visible))
@@ -110,17 +105,16 @@ HighscoresManager::HighscoresManager()
 
 HighscoresManager::~HighscoresManager()
 {
-       //TODO: nur ein Hack -- wie kann man sonst (besser) die Position eines Fensters bestimmen?
-       //           0 == aux_info_key_id -- siehe gtkwidget.c ab Zeile 905         v
-    GtkWidgetAuxInfo* aux_info =
-        (GtkWidgetAuxInfo*)gtk_object_get_data_by_id (GTK_OBJECT (m_dialog), 0);
-    if (aux_info)
-    {
-        registry.SetValue ("HscPosX", aux_info->x);
-        registry.SetValue ("HscPosY", aux_info->y);
-    }
     registry.SetValue ("HscTab", gtk_notebook_get_current_page(m_notebook));
     registry.SetValue ("HscVisible", IsDialogVisible());
+    if (IsDialogVisible())
+    {
+        int x,y;
+        gdk_window_get_position (GTK_WIDGET(m_dialog)->window, &x,&y);
+        registry.SetValue ("HscPosX", x);
+        registry.SetValue ("HscPosY", y);
+    }
+
     ShowDialog (false);
     gtk_widget_destroy (GTK_WIDGET(m_dialog));
 }
@@ -282,10 +276,31 @@ bool HighscoresManager::SaveToFile (const char* file) const
 
 void HighscoresManager::ShowDialog (bool bShow = true)
 {
-    if (bShow)
+    if (bShow && !IsDialogVisible())
+    {
         gtk_widget_show (GTK_WIDGET(m_dialog));
-    else
+
+        //TODO:wenn man die Position _vor_ dem gtk_widget_show() - Aufruf setzt,
+        //ignoriert der WM (oder wer auch immer) deren Wert und denkt sich selber einen aus :(
+        int x,y;
+        if (registry.QueryValue ("HscPosX", x) &&
+            registry.QueryValue ("HscPosY", y))
+        {
+            gdk_window_move (GTK_WIDGET(m_dialog)->window, x,y);
+            //gtk_window_set_default_size (GTK_WINDOW(m_dialog), x,y);
+        }
+    }
+    else if (!bShow && IsDialogVisible())
+    {
+        int x,y;
+        //TODO: X liefert bei gleichbleibender Fensterposition anscheinend andauernd schwankende
+        //Positionswerte zurueck
+        gdk_window_get_position (GTK_WIDGET(m_dialog)->window, &x,&y);
+        registry.SetValue ("HscPosX", x);
+        registry.SetValue ("HscPosY", y);
+
         gtk_widget_hide (GTK_WIDGET(m_dialog));
+    }
 }
 
 

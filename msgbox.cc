@@ -31,6 +31,8 @@ int MsgBox (const char* title, const char* msg, int btns)
 
     GtkWidget* msglabel = gtk_label_new (msg);
     gtk_label_set_line_wrap (GTK_LABEL(msglabel), true);
+    gtk_label_set_justify (GTK_LABEL(msglabel), GTK_JUSTIFY_FILL);
+    gtk_misc_set_alignment (GTK_MISC(msglabel), 0,0);
     gtk_box_pack_start (GTK_BOX(m_dialog->vbox), msglabel, FALSE, TRUE, 10);
     gtk_widget_show (msglabel);
 

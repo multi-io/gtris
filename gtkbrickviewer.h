@@ -2,7 +2,6 @@
 #define GTK_BRICK_VIEWER_H
 
 #include <gdk/gdk.h>
-#include <gtk/gtkadjustment.h>
 #include <gtk/gtkwidget.h>
 
 
@@ -59,6 +58,13 @@ struct stone_shape    /* Struktur für die Form eines Tetris-Steins */
        relpos [4]; 	     /* zum 'Bezugspunkt' */
     enum {on_point,on_dr_cross} rot_point; /* Drehpunkt auf dem Bezugspunkt */
   };                                       /* oder auf dem Kreuz rechts darunter */
+
+/* Kopf einer Schleife, die ueber alle Punkte einer Form iteriert */
+#define FOR_EACH_SHAPE_POINT(shape, point)           \
+    for (GdkPoint* point = (shape).relpos;              \
+             point - (shape).relpos < (shape).no_points;  \
+         point++)
+
 
 void gtk_brick_viewer_PasteShape (GtkBrickViewer* bv, stone_shape& shape, int col, int row, GdkColor color);
 

@@ -3,7 +3,7 @@ INCDIRS = -I/usr/lib/glib/include
 LIBDIRS = -L/usr/X11R6/lib
 
 LIBS = -lgdk -lgtk -lglib -lXext -lX11 -lm -lstdc++ # `gtk-config --libs`
-OBJECTS = main.o gtkbrickviewer.o TetrisGameProcess.o types.o registry.o HighscoresManager.o options.o msgbox.o xpms.o
+OBJECTS = main.o gtkbrickviewer.o TetrisGameProcess.o utils.o registry.o HighscoresManager.o options.o msgbox.o xpms.o
 
 default: release
 
@@ -51,7 +51,7 @@ xpms.h :
 gtris: $(OBJECTS)
 	$(CXX) $(OBJECTS) $(LIBDIRS) $(LIBS) -o gtris
 
-gtkbrickviewer.o main.o TetrisGameProcess.o types.o: types.h
+gtkbrickviewer.o main.o TetrisGameProcess.o utils.o: utils.h
 HighscoresManager.o main.o registry.o: registry.h
 main.o options.o TetrisGameProcess.o: TetrisGameProcess.h
 main.o msgbox.o: msgbox.h

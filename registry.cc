@@ -1,3 +1,24 @@
+/*  $Id: registry.cc,v 1.3.2.1 1999/08/29 18:28:33 olaf Exp $ */
+
+/*  GTris
+ *  $Name:  $
+ *  Copyright (C) 1999  Olaf Klischat
+ *
+ *  This program is free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 2 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program; if not, write to the Free Software
+ *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ */
+
 #include "registry.h"
 #include <fstream>
 #include <iostream>
@@ -19,14 +40,21 @@ Registry::Registry ()
     const int maxLength=1000;
     char buf[maxLength+1];
     string strKey,strVal;
-    do
+    fs.getline (buf,maxLength);
+    while (!(fs.rdstate() & ios::eofbit))
     {
-        fs.getline (buf,maxLength);
         if (fs.rdstate() & ios::failbit)
         {
             cerr << "Warning: line length in " << m_strRegFileName
                  << " exceeds " << maxLength << " bytes." << endl;
+            break;
+            //TODO: das folgende klappt nicht wie erwartet (deswegen der break-Befehl).
+            //scheinbar spult getline() bis zum Dateiende vor,
+            //wenn die linie zu lang war
+            /*
+            fs.getline (buf,maxLength);
             continue;
+            */
         }
 
         int len = strlen (buf);
@@ -36,6 +64,7 @@ Registry::Registry ()
         {
             cerr << "Warning: " << m_strRegFileName
                  << ": no '=' found in line " << endl;
+            fs.getline (buf,maxLength);
             continue;
         }
 
@@ -68,8 +97,9 @@ Registry::Registry ()
         }
 
         m_ValuesMap[strKey] = strVal;
+
+        fs.getline (buf,maxLength);
     }
-    while (!(fs.rdstate() & ios::eofbit));
 }
 
 
@@ -91,7 +121,7 @@ Registry::~Registry ()
     for (map_type::const_iterator it = m_ValuesMap.begin();
          it!=m_ValuesMap.end(); it++)
     {
-        fs << it->first << "=";
+        fs << it->first << '=';
 
         const char* pVal = it->second.c_str();
         const char* pEnd = pVal + it->second.size();
@@ -103,7 +133,7 @@ Registry::~Registry ()
             switch (*pNextUncodedChar)
             {
             case '\n':
-                strCodedVal.append ("\n");
+                strCodedVal.append ("\\n");
                 break;
             case '\\':
                 strCodedVal.append ("\\\\");

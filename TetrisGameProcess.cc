@@ -1,3 +1,24 @@
+/*  $Id: TetrisGameProcess.cc,v 1.6.2.1 1999/08/29 18:28:32 olaf Exp $ */
+
+/*  GTris
+ *  $Name:  $
+ *  Copyright (C) 1999  Olaf Klischat
+ *
+ *  This program is free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 2 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program; if not, write to the Free Software
+ *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ */
+
 #include <stdlib.h>
 #include <time.h>
 #include <gdk/gdkkeysyms.h>
@@ -268,7 +289,6 @@ bool CTetrisGameProcess::StepForth ()
                 //TODO: kann da nicht manchmal shape_avail + no_shapes herauskommen?
                 next_shape = shape_avail + (rand()/20-1) * no_shapes / (RAND_MAX/20);
                 current_stone.shape = shape_avail[(rand()/20-1) * no_shapes / (RAND_MAX/20)];
-
             }
             else
             {
@@ -286,6 +306,15 @@ bool CTetrisGameProcess::StepForth ()
                 if (-curr_point->y>maxy) maxy=-curr_point->y;
             current_stone.position.y=maxy;
 
+            //TODO: StoneColorRange::scrWide (viele Steinfarben) noch nicht implementiert
+            //(verhaelt sich bisher genauso wie scrBasic)
+            //Problem: Jede Farbe muss vor ihrer Benutzung 'allokiert' werden (gdk_color_alloc)
+            //bei scrBasic geht das, da nur begrenzte Anzahl (7) von Farben
+            // ==> Allokierung in CTetrisGameProcess::on_playfield_realized
+            //bei scrWide koennen aber praktisch unendlich viele Farben auftreten
+            //Moegliche Loesung: Tabelle verwalten, die fuer jede benutze Farbe die aktuelle Anzahl der
+            //Bricks mit dieser Farbe speichert. Geht der Wert fuer eine Farbe in dieser Tabelle auf 0,
+            //kann die Farbe mit gdk_color_free wieder freigegeben werden.
             GdkColor c;
             switch (m_StoneColorRange)
             {

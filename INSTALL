@@ -1,0 +1,13 @@
+What's needed
+-------------
+- GTK+ 1.1 or higher
+- recent C++ compiler (egcs >=1.0.2)
+
+How to install
+--------------
+- edit Makefile as needed (name of C++ compiler executable, include directories, 'make install' destination directories)
+- make
+- become root (if necessary)
+- make install
+
+hscores.bin is a sample highscores file.

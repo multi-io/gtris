@@ -1,3 +1,24 @@
+/*  $Id: main.cc,v 1.6.2.1 1999/08/29 18:28:32 olaf Exp $ */
+
+/*  GTris
+ *  $Name:  $
+ *  Copyright (C) 1999  Olaf Klischat
+ *
+ *  This program is free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 2 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program; if not, write to the Free Software
+ *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ */
+
 #include <gtk/gtk.h>
 #include <stdio.h>
 #include <string>
@@ -42,6 +63,9 @@ static void OnGameStop();
 
 static void CreateMenuAndToolbar( GtkWidget  *window, GtkWidget **menubar, GtkWidget **toolbar );
 
+
+static GtkWidget* m_mainwnd;
+
 static gint delete_wnd_event
     ( GtkWidget*, GdkEvent, gpointer )
 {
@@ -59,6 +83,11 @@ Quit Game?", MB_YESNO))
             return TRUE;
     }
 
+    int x=100,y=100;
+    gdk_window_get_root_origin (m_mainwnd->window,&x,&y);
+    registry.SetValue ("WndPosX",x);
+    registry.SetValue ("WndPosY",y);
+
     return FALSE;
 }
 
@@ -73,8 +102,6 @@ static void OnGameExit()
         destroy_wnd_event (NULL,NULL);
 }
 
-
-static GtkWidget* m_mainwnd;
 
 int main (int argc, char* argv[])
 {
@@ -105,8 +132,15 @@ int main (int argc, char* argv[])
 
     m_pGameProcess->m_StoneColorRange = CTetrisGameProcess::scrBasic;
     if ( registry.QueryValue ("StoneColorRange", regbuffer) )
-        m_pGameProcess->m_StoneColorRange = (CTetrisGameProcess::StoneColorRange)regbuffer;
-
+    {
+        //einfaches Casten von unsigned nach CTetrisGameProcess::StoneColorRange produziert
+        //ab und zu Muell
+        //obwohl IMO lt. Standard enum - und int - Typen eineindeutig ineinander umwandelbar sein sollten
+        //==> egcs - Bug??
+        m_pGameProcess->m_StoneColorRange =
+            regbuffer==0? CTetrisGameProcess::scrBlackWhite :
+                         (regbuffer==1? CTetrisGameProcess::scrBasic : CTetrisGameProcess::scrWide);
+    }
 
     if ( !registry.QueryValue ("HscFile", m_HscFile) )
     {
@@ -179,6 +213,13 @@ int main (int argc, char* argv[])
 
     gtk_widget_show (m_mainwnd);
 
+    int x=100, y=100;
+    if ( registry.QueryValue ("WndPosX", regbuffer) )
+        x = regbuffer;
+    if ( registry.QueryValue ("WndPosY", regbuffer) )
+        y = regbuffer;
+    gdk_window_move (m_mainwnd->window,x,y);
+
     UpdateScoreDisplay();
     UpdateLinesDisplay();
     UpdateLevelDisplay();
@@ -189,7 +230,9 @@ int main (int argc, char* argv[])
     delete m_pHighscoresManager;
 
     registry.SetValue ("Level", m_Level);
-    registry.SetValue ("StoneColorRange", (unsigned)m_pGameProcess->m_StoneColorRange);
+    registry.SetValue ("StoneColorRange",
+                       m_pGameProcess->m_StoneColorRange==CTetrisGameProcess::scrBlackWhite?
+                              0 : (m_pGameProcess->m_StoneColorRange==CTetrisGameProcess::scrBasic? 1:2 ) );
     registry.SetValue ("HscFile", m_HscFile);
     registry.SetValue ("HscUserName", m_HscUserName);
     registry.SetValue ("BrickSize", gtk_brick_viewer_GetBrickSize (m_bvPlayField));
@@ -218,8 +261,6 @@ static void OnGamePause();
 static void OnViewHighscores();
 static void OnOptionsGameOptions();
 static void OnOptionsLevel (GtkWidget*, unsigned* pLevel);
-
-static void OnTest1();
 
 static GtkMenuItem* m_mniGameNew;
 static GtkMenuItem* m_mniGameRun;
@@ -275,9 +316,7 @@ static GtkItemFactoryEntry menu_items[] = {
   { "/_View",        (char*)NULL,  NULL, 0, "<Branch>" },
   { "/View/_Highscores",  (char*)NULL,  (GtkItemFactoryCallback)OnViewHighscores, 0, NULL },
   { "/_Options",        (char*)NULL,  NULL, 0, "<Branch>" },
-  { "/Options/_Game Options",  (char*)NULL,  (GtkItemFactoryCallback)OnOptionsGameOptions, 0, NULL },
-  { "/_Test",        (char*)NULL,  NULL, 0, "<Branch>" },
-  { "/Test/Test _1",  (char*)NULL,  (GtkItemFactoryCallback)OnTest1, 0, NULL },
+  { "/Options/_Game Options",  (char*)NULL,  (GtkItemFactoryCallback)OnOptionsGameOptions, 0, NULL }
 };
 
 static void UpdateItems ();
@@ -357,6 +396,9 @@ static void CreateMenuAndToolbar( GtkWidget  *window, GtkWidget **menubar, GtkWi
 
     UpdateItems ();
 }
+
+//TODO: der ganze Menue-/Toolbar-Kram saugt.
+//==> was Cooleres ausdenken (Action-Klassen wie in Java/Swing)
 
 
 static void UpdateItems ()
@@ -591,50 +633,4 @@ static gint OnTimeout (gpointer)
         }
     }
     return TRUE;
-}
-
-
-
-#include <X11/Xlib.h>
-
-typedef struct
-{
-  GdkWindow window;
-  GdkWindow *parent;
-  Window xwindow;
-  Display *xdisplay;
-  gint16 x;
-  gint16 y;
-  guint16 width;
-  guint16 height;
-  guint8 resize_count;
-  guint8 window_type;
-  guint ref_count;
-  guint destroyed : 2;
-  guint mapped : 1;
-  guint guffaw_gravity : 1;
-
-  gint extension_events;
-
-  GList *filters;
-  GdkColormap *colormap;
-  GList *children;
-}
-wpriv;
-
-static void OnTest1()
-{
-    wpriv* priv = (wpriv*)(m_mainwnd->window);
-    XWindowAttributes wattr;
-    XGetWindowAttributes (priv->xdisplay, priv->xwindow, &wattr);
-    printf ("Von XGetWindowAttributes gelieferte Position: x=%i y=%i\n",wattr.x,wattr.y);
-
-    int x,y;
-    gdk_window_get_position (m_mainwnd->window,&x,&y);
-    gdk_window_move (m_mainwnd->window,x,y);
-
-    XGetWindowAttributes (priv->xdisplay, priv->xwindow, &wattr);
-    printf ("Von XGetWindowAttributes gelieferte Position: x=%i y=%i\n",wattr.x,wattr.y);
-
-    gtk_menu_item_activate (GTK_MENU_ITEM(m_mniViewHighscores));
 }

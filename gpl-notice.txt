@@ -1,4 +1,4 @@
-/*  $Id: msgbox.h,v 1.2.4.1 1999/08/29 18:28:33 olaf Exp $ */
+/*  $Id: gpl-notice.txt,v 1.1.2.1 1999/08/29 18:28:32 olaf Exp $ */
 
 /*  GTris
  *  $Name:  $
@@ -19,19 +19,3 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef MSGBOX_H
-#define MSGBOX_H
-
-const MB_OK = 1;
-const MB_CANCEL = 2;
-const MB_YES = 4;
-const MB_NO = 8;
-
-const MB_OKCANCEL = MB_OK|MB_CANCEL;
-const MB_YESNO = MB_YES|MB_NO;
-
-const nBtnTypes = 4;
-
-int MsgBox (const char* title, const char* msg, int btns);
-
-#endif

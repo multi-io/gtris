@@ -1,3 +1,24 @@
+/*  $Id: HighscoresManager.cc,v 1.5.2.1 1999/08/29 18:28:31 olaf Exp $ */
+
+/*  GTris
+ *  $Name:  $
+ *  Copyright (C) 1999  Olaf Klischat
+ *
+ *  This program is free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 2 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program; if not, write to the Free Software
+ *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ */
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <fstream>
@@ -143,14 +164,6 @@ HighscoresManager::~HighscoresManager()
 {
     registry.SetValue ("HscTab", gtk_notebook_get_current_page(m_notebook));
     registry.SetValue ("HscVisible", IsDialogVisible());
-    if (IsDialogVisible())
-    {
-        int x,y;
-        gdk_window_get_position (GTK_WIDGET(m_dialog)->window, &x,&y);
-        registry.SetValue ("HscPosX", x);
-        registry.SetValue ("HscPosY", y);
-    }
-
     ShowDialog (false);
     gtk_widget_destroy (GTK_WIDGET(m_dialog));
 }
@@ -303,14 +316,16 @@ void HighscoresManager::ShowDialog (bool bShow = true)
     else if (!bShow && IsDialogVisible())
     {
         int x,y;
-        //TODO: X liefert bei gleichbleibender Fensterposition anscheinend andauernd schwankende
-        //Positionswerte zurueck
-        gdk_window_get_position (GTK_WIDGET(m_dialog)->window, &x,&y);
+        //gdk_window_get_deskrelative_origin (GTK_WIDGET(m_dialog)->window, &x,&y);
+        gdk_window_get_root_origin (GTK_WIDGET(m_dialog)->window, &x,&y);
         registry.SetValue ("HscPosX", x);
         registry.SetValue ("HscPosY", y);
 
         gtk_widget_hide (GTK_WIDGET(m_dialog));
     }
+    //TODO: gdk_window_move platziert das Fenster 1 oder 2 Pixel links oberhalb der Position,
+    //an der es beim letzten gdk_window_get_root_origin - Aufruf war. Wieso?
+    //Gleiches Problem beim Hauptfenster (main.cc).
 }
 
 

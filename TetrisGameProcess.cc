@@ -1,4 +1,4 @@
-/*  $Id: TetrisGameProcess.cc,v 1.6.2.4 2000/01/12 12:45:01 olaf Exp $ */
+/*  $Id: TetrisGameProcess.cc,v 1.6.2.4.2.1 2006/08/05 07:03:04 olaf Exp $ */
 
 /*  GTris
  *  $Name:  $
@@ -24,6 +24,8 @@
 #include <gdk/gdkkeysyms.h>
 #include <gtk/gtksignal.h>
 #include "TetrisGameProcess.h"
+
+using namespace std;
 
 
 #define no_shapes 7

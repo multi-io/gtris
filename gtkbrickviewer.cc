@@ -1,4 +1,4 @@
-/*  $Id: gtkbrickviewer.cc,v 1.4.2.2 1999/10/17 09:30:11 olaf Exp $ */
+/*  $Id: gtkbrickviewer.cc,v 1.4.2.2.2.1 2006/08/05 07:03:04 olaf Exp $ */
 
 /*  GTris
  *  $Name:  $
@@ -45,13 +45,13 @@ guint gtk_brick_viewer_get_type ()
     {
         GtkTypeInfo ti =
         {
-            "GtkBrickViewer",
-            sizeof (GtkBrickViewer),
-            sizeof (GtkBrickViewerClass),
-            (GtkClassInitFunc) gtk_brick_viewer_class_init,
-            (GtkObjectInitFunc) gtk_brick_viewer_init,
-            (GtkArgSetFunc) NULL,
-            (GtkArgGetFunc) NULL,
+            type_name: "GtkBrickViewer",
+            object_size: sizeof (GtkBrickViewer),
+            class_size: sizeof (GtkBrickViewerClass),
+            class_init_func: (GtkClassInitFunc) gtk_brick_viewer_class_init,
+            object_init_func: (GtkObjectInitFunc) gtk_brick_viewer_init,
+            //arg_set_func: (GtkArgSetFunc) NULL,
+            //arg_get_func: (GtkArgGetFunc) NULL,
         };
 
         type = gtk_type_unique (gtk_widget_get_type (), &ti);

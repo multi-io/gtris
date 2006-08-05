@@ -1,4 +1,4 @@
-/*  $Id: registry.h,v 1.3.2.1 1999/08/29 18:28:33 olaf Exp $ */
+/*  $Id: registry.h,v 1.3.2.1.2.1 2006/08/05 07:03:04 olaf Exp $ */
 
 /*  GTris
  *  $Name:  $
@@ -24,7 +24,7 @@
 
 #include <string>
 #include <map>
-#include <strstream>
+#include <sstream>
 #include <algorithm>
 
 
@@ -45,7 +45,7 @@ public:
         map_type::const_iterator it = m_ValuesMap.find(key);
         if (it == m_ValuesMap.end())
             return false;
-        istrstream ss (it->second.c_str(),it->second.size());
+        std::istringstream ss (it->second);
         ss >> result;
         return !ss.fail();
     }
@@ -62,7 +62,7 @@ public:
     template <class T>
     bool SetValue (const char* key, const T& value)
     {
-        ostrstream ss;
+        std::ostringstream ss;
         ss << value << '\0';
         if (ss.fail()) return false;
         m_ValuesMap[key] = ss.str();

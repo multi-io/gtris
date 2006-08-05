@@ -1,4 +1,4 @@
-/*  $Id: HighscoresManager.cc,v 1.5.2.2.2.1 2000/02/11 14:28:06 olaf Exp $ */
+/*  $Id: HighscoresManager.cc,v 1.5.2.2.2.2 2006/08/05 07:03:04 olaf Exp $ */
 
 /*  GTris
  *  $Name:  $
@@ -28,6 +28,8 @@
 #include "registry.h"
 #include "utils.h"
 
+
+using namespace std;
 
 THscEntry::THscEntry(const char* iname, unsigned iscore, unsigned ilines, int idate) :
     name(iname), score(iscore), lines(ilines), date(idate)
@@ -75,7 +77,7 @@ istream& operator>> (istream& is, THscEntry& e)
     is.read ((char*)&s,sizeof(s));
     if (s > 1000)
     {
-        is.set(ios::failbit);
+        is.setstate(ios::failbit);
         return is;
     }
 
@@ -249,9 +251,9 @@ int HighscoresManager::GetLeastScore (int iLevel) const
 
 bool HighscoresManager::LoadFromFile (const char* file)
 {
-    ifstream fs (file,ios::in|ios::binary|ios::nocreate);
+    ifstream fs (file,ios::in|ios::binary);
 
-    if (!fs.rdbuf()->is_open())
+    if (!fs)
         return false;
 
     THscList hsclists[nLevels];
@@ -310,7 +312,7 @@ bool HighscoresManager::SaveToFile (const char* file) const
 }
 
 
-void HighscoresManager::ShowDialog (bool bShow = true)
+void HighscoresManager::ShowDialog (bool bShow)
 {
     if (bShow && !IsDialogVisible())
     {

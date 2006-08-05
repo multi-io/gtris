@@ -1,4 +1,4 @@
-/*  $Id: HighscoresManager.h,v 1.4.2.1 1999/08/29 18:28:31 olaf Exp $ */
+/*  $Id: HighscoresManager.h,v 1.4.2.1.2.1 2006/08/05 07:03:04 olaf Exp $ */
 
 /*  GTris
  *  $Name:  $
@@ -40,8 +40,8 @@ struct THscEntry
     time_t date;
     bool operator< (const THscEntry& e2) const;
     bool operator== (const THscEntry& e2) const;
-    friend ostream& operator<< (ostream&, const THscEntry&);
-    friend istream& operator>> (istream&, THscEntry&);
+    friend std::ostream& operator<< (std::ostream&, const THscEntry&);
+    friend std::istream& operator>> (std::istream&, THscEntry&);
 };
 
 typedef std::vector <THscEntry> THscList;

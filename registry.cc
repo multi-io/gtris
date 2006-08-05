@@ -1,4 +1,4 @@
-/*  $Id: registry.cc,v 1.3.2.1 1999/08/29 18:28:33 olaf Exp $ */
+/*  $Id: registry.cc,v 1.3.2.1.2.1 2006/08/05 07:03:04 olaf Exp $ */
 
 /*  GTris
  *  $Name:  $
@@ -33,8 +33,8 @@ Registry::Registry ()
     m_strRegFileName = g_get_home_dir();
     m_strRegFileName += "/.gtrisrc";
 
-    ifstream fs (m_strRegFileName.c_str(),ios::in|ios::nocreate);
-    if (!fs.rdbuf()->is_open())
+    ifstream fs (m_strRegFileName.c_str(),ios::in);
+    if (!fs)
         return;
 
     const int maxLength=1000;

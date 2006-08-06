@@ -1,4 +1,4 @@
-/*  $Id: options.cc,v 1.4.2.3.2.1 2000/02/11 14:28:07 olaf Exp $ */
+/*  $Id: options.cc,v 1.4.2.3.2.2 2006/08/06 16:50:34 olaf Exp $ */
 
 /*  GTris
  *  $Name:  $
@@ -62,14 +62,14 @@ bool GetOptions (unsigned* level,
     GtkWidget *m_btnCancel;
 
     m_dialog = gtk_dialog_new ();
-    gtk_signal_connect (GTK_OBJECT (m_dialog), "delete_event",
-                        GTK_SIGNAL_FUNC (on_dlg_delete),
-                        NULL);
+    g_signal_connect (GTK_OBJECT (m_dialog), "delete_event",
+                      GTK_SIGNAL_FUNC (on_dlg_delete),
+                      NULL);
     gtk_window_set_title (GTK_WINDOW (m_dialog), "Options");
     gtk_window_set_policy (GTK_WINDOW (m_dialog), FALSE, FALSE, FALSE);
 
     GtkAccelGroup* accel_group = gtk_accel_group_new ();
-    gtk_accel_group_attach (accel_group, GTK_OBJECT (m_dialog));
+    gtk_window_add_accel_group(GTK_WINDOW(m_dialog), accel_group);
 
     dialog_vbox1 = GTK_DIALOG (m_dialog)->vbox;
     gtk_widget_show (dialog_vbox1);
@@ -173,30 +173,30 @@ bool GetOptions (unsigned* level,
     connect_button_accelerator (GTK_BUTTON(m_btnOK), "_OK", accel_group);
     gtk_widget_show (m_btnOK);
     gtk_box_pack_start (GTK_BOX (dialog_action_area1), m_btnOK, TRUE, TRUE, 0);
-    gtk_signal_connect (GTK_OBJECT (m_btnOK), "clicked",
-                        GTK_SIGNAL_FUNC (on_btnOK_clicked),
-                        NULL);
+    g_signal_connect (GTK_OBJECT (m_btnOK), "clicked",
+                      GTK_SIGNAL_FUNC (on_btnOK_clicked),
+                      NULL);
 
     m_btnCancel = gtk_button_new ();
     connect_button_accelerator (GTK_BUTTON(m_btnCancel), "_Cancel", accel_group);
     gtk_widget_show (m_btnCancel);
     gtk_box_pack_start (GTK_BOX (dialog_action_area1), m_btnCancel, TRUE, TRUE, 0);
-    gtk_signal_connect (GTK_OBJECT (m_btnCancel), "clicked",
-                        GTK_SIGNAL_FUNC (on_btnCancel_clicked),
-                        NULL);
+    g_signal_connect (GTK_OBJECT (m_btnCancel), "clicked",
+                      GTK_SIGNAL_FUNC (on_btnCancel_clicked),
+                      NULL);
 
     gtk_widget_add_accelerator
             (m_btnOK, "clicked",
              accel_group,
              GDK_Return,
-             0,
+             (GdkModifierType)0,
              GTK_ACCEL_LOCKED);
 
     gtk_widget_add_accelerator
             (m_btnCancel, "clicked",
              accel_group,
              GDK_Escape,
-             0,
+             (GdkModifierType)0,
              GTK_ACCEL_LOCKED);
 
     GtkWidget* rb;

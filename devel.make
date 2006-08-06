@@ -1,15 +1,18 @@
-#  $Id: devel.make,v 1.1.2.3 2002/05/19 21:48:39 olaf Exp $
+#  $Id: devel.make,v 1.1.2.4 2006/08/06 16:50:33 olaf Exp $
 
 REVISION:=$(shell echo $(filter release-%,$Name:  $) | sed 's/release-//g' | sed 's/-/./g' )
 
 all: Makefile
 	$(MAKE)
 
+aclocal.m4: configure.in
+	aclocal
+
 Makefile: Makefile.in configure
 	rm -f config.cache 2>/dev/null || true
 	CXXFLAGS='-g -O0' ./configure
 
-configure: configure.in revision
+configure: configure.in revision aclocal.m4
 	autoconf configure.in >configure
 	chmod u+x configure
 

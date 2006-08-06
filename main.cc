@@ -1,4 +1,4 @@
-/*  $Id: main.cc,v 1.6.2.2.2.2 2000/02/11 14:28:06 olaf Exp $ */
+/*  $Id: main.cc,v 1.6.2.2.2.3 2006/08/06 16:50:33 olaf Exp $ */
 
 /*  GTris
  *  $Name:  $
@@ -266,63 +266,60 @@ static void OnOptionsGameOptions();
 static void OnHelpAbout();
 static void OnOptionsLevel (GtkWidget*, unsigned* pLevel);
 
-static GtkMenuItem* m_mniGameNew;
-static GtkMenuItem* m_mniGameRun;
-static GtkMenuItem* m_mniGameStop;
-static GtkMenuItem* m_mniGamePause;
-static GtkMenuItem* m_mniViewHighscores;
 
-struct ToolbarItem
-{
-    char label[20];
-    char tooltip[30];
-    char** xpmdata;
-    GtkSignalFunc callback;
-    GtkWidget* widget;
-};
+#define GAME_NEW_STOCK GTK_STOCK_OPEN
+#define GAME_RUN_STOCK GTK_STOCK_OPEN
+#define GAME_STOP_STOCK GTK_STOCK_OPEN
+#define GAME_PAUSE_STOCK GTK_STOCK_OPEN
+#define GAME_EXIT_STOCK GTK_STOCK_OPEN
+#define VIEW_HSC_STOCK GTK_STOCK_OPEN
+#define GAME_OPTIONS_STOCK GTK_STOCK_OPEN
+#define HELP_ABOUT_STOCK GTK_STOCK_OPEN
 
-/* TODO: Die Casts nach GtkSignalFunc sind noetig, da egcs (1.0.2) sonst Warnungen ausspuckt,
- * obwohl die Signaturen der Funktionen exakt mit GtkSignalFunc uebereinstimmen => ??
- */
+static GtkActionEntry actions[] = {
 
-static ToolbarItem m_tbitems[] =
-{
-    {"New","new game",new_xpm,(GtkSignalFunc)OnGameNew,NULL},
-    {"Run","run game",run_xpm,(GtkSignalFunc)OnGameRun,NULL},
-    {"Stop","stop game",stop_xpm,(GtkSignalFunc)OnGameStop,NULL},
-    {"Pause","pause game",pause_xpm,(GtkSignalFunc)OnGamePause,NULL},
-    {"Options","game options",options_xpm,(GtkSignalFunc)OnOptionsGameOptions,NULL},
-    {"Highscores","show/hide highscores",highscores_xpm,(GtkSignalFunc)OnViewHighscores,NULL}
-};
+// struct GtkActionEntry {
 
-static int m_ntbitems = sizeof(m_tbitems)/sizeof(m_tbitems[0]);
+//   const gchar     *name;
+//   const gchar     *stock_id;
+//   const gchar     *label;
+//   const gchar     *accelerator;
+//   const gchar     *tooltip;
+//   GCallback  callback;
+// };
+//   { "FileMenu", NULL, "_File" },
+//   { "ViewMenu", NULL, "_View" },
+//   { "Open", GTK_STOCK_OPEN, "_Open", "<control>O", "Open a file", open_action_callback },
+//   { "Exit", GTK_STOCK_OPEN, "E_xit", "<control>Q", "Exit the program", exit_action_callback },
+//   { "ZoomIn", GTK_STOCK_ZOOM_IN, "Zoom _In", "plus", "Zoom into the image", zoom_in_action_callback },
+//   { "ZoomOut", GTK_STOCK_ZOOM_OUT, "Zoom _Out", "minus", "Zoom away from the image", zoom_out_action_callback },
 
-typedef enum
-{
-    i_tbiNew = 0,
-    i_tbiRun,
-    i_tbiStop,
-    i_tbiPause,
-    i_tbiOptions,
-    i_tbiHighscores
-};
+//   { "/_Game",        (char*)NULL,  NULL, 0, "<Branch>" },
+//   { "/Game/_New",    "<control>N", (GtkItemFactoryCallback)OnGameNew,   0, NULL },
+//   { "/Game/_Run",    "F6", (GtkItemFactoryCallback)OnGameRun,   0, NULL },
+//   { "/Game/_Stop",   "F8", (GtkItemFactoryCallback)OnGameStop,  0, NULL },
+//   { "/Game/_Pause",  "F5",  (GtkItemFactoryCallback)OnGamePause, 0, NULL },
+//   { "/Game/",  (char*)NULL,  NULL, 0, "<Separator>" },
+//   { "/Game/E_xit",  "<alt>F4",  (GtkItemFactoryCallback)OnGameExit, 0, NULL },
+//   { "/_View",        (char*)NULL,  NULL, 0, "<Branch>" },
+//   { "/View/_Highscores",  (char*)NULL,  (GtkItemFactoryCallback)OnViewHighscores, 0, NULL },
+//   { "/_Options",        (char*)NULL,  NULL, 0, "<Branch>" },
+//   { "/Options/_Game Options",  (char*)NULL,  (GtkItemFactoryCallback)OnOptionsGameOptions, 0, NULL },
+//   { "/_Help",        (char*)NULL,  NULL, 0, "<LastBranch>" },
+//   { "/Help/_About",  (char*)NULL,  (GtkItemFactoryCallback)OnHelpAbout, 0, NULL }
 
-/* TODO: s.o. */
-
-static GtkItemFactoryEntry menu_items[] = {
-  { "/_Game",        (char*)NULL,  NULL, 0, "<Branch>" },
-  { "/Game/_New",    "<control>N", (GtkItemFactoryCallback)OnGameNew,   0, NULL },
-  { "/Game/_Run",    "F6", (GtkItemFactoryCallback)OnGameRun,   0, NULL },
-  { "/Game/_Stop",   "F8", (GtkItemFactoryCallback)OnGameStop,  0, NULL },
-  { "/Game/_Pause",  "F5",  (GtkItemFactoryCallback)OnGamePause, 0, NULL },
-  { "/Game/",  (char*)NULL,  NULL, 0, "<Separator>" },
-  { "/Game/E_xit",  "<alt>F4",  (GtkItemFactoryCallback)OnGameExit, 0, NULL },
-  { "/_View",        (char*)NULL,  NULL, 0, "<Branch>" },
-  { "/View/_Highscores",  (char*)NULL,  (GtkItemFactoryCallback)OnViewHighscores, 0, NULL },
-  { "/_Options",        (char*)NULL,  NULL, 0, "<Branch>" },
-  { "/Options/_Game Options",  (char*)NULL,  (GtkItemFactoryCallback)OnOptionsGameOptions, 0, NULL },
-  { "/_Help",        (char*)NULL,  NULL, 0, "<LastBranch>" },
-  { "/Help/_About",  (char*)NULL,  (GtkItemFactoryCallback)OnHelpAbout, 0, NULL }
+    { "Game", NULL, "_Game" },
+    { "GameNew", GAME_NEW_STOCK, "_New",  "<control>N", "new game", OnGameNew },
+    { "GameRun", GAME_RUN_STOCK, "_Run",  "F6", "run/resume game", OnGameRun },
+    { "GameStop", GAME_STOP_STOCK, "_Stop",  "F8", "end game", OnGameStop },
+    { "GamePause", GAME_PAUSE_STOCK, "_Pause",  "F5", "pause game", OnGamePause },
+    { "GameExit", GAME_EXIT_STOCK, "E_xit",  "<alt>F4", "exit gtris", OnGameExit },
+    { "View", NULL, "_View" },
+    { "ViewHighscores", VIEW_HSC_STOCK, "_Highscores",  NULL, "view highscores", OnViewHighscores },
+    { "Options", NULL, "_Options" },
+    { "GameOptions", GAME_OPTIONS_STOCK, "_Game Options",  NULL, "view highscores", OnOptionsGameOptions },
+    { "Help", NULL, "_Help" },
+    { "HelpAbout", HELP_ABOUT_STOCK, "_About",  NULL, NULL, OnHelpAbout },
 };
 
 static void UpdateItems ();
@@ -332,30 +329,32 @@ static void CreateMenuAndToolbar( GtkWidget  *window, GtkWidget **menubar, GtkWi
     if (!GTK_WIDGET_REALIZED(GTK_WIDGET(window)))
         gtk_widget_realize (GTK_WIDGET(window));
 
-    GtkItemFactory *item_factory;
-    GtkAccelGroup *accel_group;
-    gint nmenu_items = sizeof (menu_items) / sizeof (menu_items[0]);
+    GtkActionGroup *action_group = gtk_action_group_new ("MenuActions");
+    gtk_action_group_add_actions(action_group, actions, G_N_ELEMENTS(actions), window);
 
-    accel_group = gtk_accel_group_new ();
-    item_factory = gtk_item_factory_new (GTK_TYPE_MENU_BAR, "<main>",
-                                         accel_group);
-    gtk_item_factory_create_items (item_factory, nmenu_items, menu_items, NULL);
-    gtk_accel_group_attach (accel_group, GTK_OBJECT (window));
+    GtkUIManager *ui_manager = gtk_ui_manager_new();
+    gtk_ui_manager_insert_action_group(ui_manager, action_group, 0);
 
-    m_mniGameNew =
-        GTK_MENU_ITEM( gtk_item_factory_get_widget (item_factory, "/Game/New") );
-    m_mniGameRun =
-        GTK_MENU_ITEM( gtk_item_factory_get_widget (item_factory, "/Game/Run") );
-    m_mniGameStop =
-        GTK_MENU_ITEM( gtk_item_factory_get_widget (item_factory, "/Game/Stop") );
-    m_mniGamePause =
-        GTK_MENU_ITEM( gtk_item_factory_get_widget (item_factory, "/Game/Pause") );
-    m_mniViewHighscores =
-        GTK_MENU_ITEM( gtk_item_factory_get_widget (item_factory, "/View/Highscores") );
+    GtkAccelGroup *accel_group = gtk_ui_manager_get_accel_group(ui_manager);
+    gtk_window_add_accel_group(GTK_WINDOW (window), accel_group);
 
+    GError *error = NULL;
+    if (!gtk_ui_manager_add_ui_from_file(ui_manager, "ui.xml", &error)) {
+        g_message ("building menus failed: s", error->message);
+        g_error_free (error);
+        exit (EXIT_FAILURE);
+    }
 
+    *menubar = gtk_ui_manager_get_widget (ui_manager, "/menubar");
+    g_object_ref(*menubar);
+    *toolbar = gtk_ui_manager_get_widget (ui_manager, "/toolbar");
+    g_object_ref(*toolbar);
+
+    //add menu items for selecting the level directly
     static unsigned levels[nLevels];
-    GtkMenu* om = GTK_MENU( gtk_item_factory_get_widget (item_factory,"/Options") );
+
+    GtkMenuItem* options_menu_item = GTK_MENU_ITEM(gtk_ui_manager_get_widget (ui_manager, "/menubar/Options"));
+    GtkMenu* om =  GTK_MENU(gtk_menu_item_get_submenu(options_menu_item));
     GtkWidget* sep = gtk_menu_item_new();
     gtk_widget_show (sep);
     gtk_menu_append (om,sep);
@@ -373,10 +372,11 @@ static void CreateMenuAndToolbar( GtkWidget  *window, GtkWidget **menubar, GtkWi
         sprintf (buf,"Level _%i",i);
         guint accel_key = gtk_label_parse_uline (GTK_LABEL(lbl), buf);
         gtk_widget_add_accelerator
-            (mni, "activate_item",
-             (GtkAccelGroup*)(gtk_accel_groups_from_object (GTK_OBJECT(om)) ->data),
+            (mni, "activate",
+             accel_group, //(GtkAccelGroup*)(gtk_accel_groups_from_object (G_OBJECT(om)) ->data),
              accel_key,
-             0, GTK_ACCEL_LOCKED);
+             (GdkModifierType)0,
+             GTK_ACCEL_LOCKED);
 
         gtk_widget_show (mni);
         gtk_menu_append (om,mni);
@@ -386,42 +386,26 @@ static void CreateMenuAndToolbar( GtkWidget  *window, GtkWidget **menubar, GtkWi
                             (gpointer) (levels+i));
     }
 
-    *menubar = gtk_item_factory_get_widget (item_factory, "<main>");
-
-    *toolbar = gtk_toolbar_new(GTK_ORIENTATION_HORIZONTAL,GTK_TOOLBAR_ICONS);
-    for (int i=0; i<m_ntbitems; i++)
-    {
-        ToolbarItem& tbi = m_tbitems[i];
-        GdkBitmap* mask;
-        GdkPixmap* gdkpx = gdk_pixmap_create_from_xpm_d
-            (window->window, &mask, NULL, tbi.xpmdata );
-        GtkWidget* gtkpx = gtk_pixmap_new (gdkpx,mask);
-        tbi.widget = gtk_toolbar_append_item (GTK_TOOLBAR(*toolbar), tbi.label, tbi.tooltip, NULL,
-                                 gtkpx, tbi.callback, NULL);
-    }
-
     UpdateItems ();
 }
 
-//TODO: der ganze Menue-/Toolbar-Kram saugt.
-//==> was Cooleres ausdenken (Action-Klassen wie in Java/Swing)
 
 
 static void UpdateItems ()
 {
-    bool bEnabled;
-    bEnabled =  (!m_pGameProcess->IsGameRunning()) ||
-                (GamePaused && m_pGameProcess->IsGameRunning());
-    gtk_widget_set_sensitive (GTK_WIDGET(m_mniGameRun),bEnabled);
-    gtk_widget_set_sensitive (m_tbitems[i_tbiRun].widget,bEnabled);
+//     bool bEnabled;
+//     bEnabled =  (!m_pGameProcess->IsGameRunning()) ||
+//                 (GamePaused && m_pGameProcess->IsGameRunning());
+//     gtk_widget_set_sensitive (GTK_WIDGET(m_mniGameRun),bEnabled);
+//     gtk_widget_set_sensitive (m_tbitems[i_tbiRun].widget,bEnabled);
 
-    bEnabled =  m_pGameProcess->IsGameRunning();
-    gtk_widget_set_sensitive (GTK_WIDGET(m_mniGameStop),bEnabled);
-    gtk_widget_set_sensitive (m_tbitems[i_tbiStop].widget,bEnabled);
+//     bEnabled =  m_pGameProcess->IsGameRunning();
+//     gtk_widget_set_sensitive (GTK_WIDGET(m_mniGameStop),bEnabled);
+//     gtk_widget_set_sensitive (m_tbitems[i_tbiStop].widget,bEnabled);
 
-    bEnabled =  m_pGameProcess->IsGameRunning() && !GamePaused;
-    gtk_widget_set_sensitive (GTK_WIDGET(m_mniGamePause),bEnabled);
-    gtk_widget_set_sensitive (m_tbitems[i_tbiPause].widget,bEnabled);
+//     bEnabled =  m_pGameProcess->IsGameRunning() && !GamePaused;
+//     gtk_widget_set_sensitive (GTK_WIDGET(m_mniGamePause),bEnabled);
+//     gtk_widget_set_sensitive (m_tbitems[i_tbiPause].widget,bEnabled);
 }
 
 
@@ -536,7 +520,7 @@ static void OnHelpAbout()
     gtk_widget_realize (GTK_WIDGET(aboutbox));
 
     GtkAccelGroup* accel_group = gtk_accel_group_new ();
-    gtk_accel_group_attach (accel_group, GTK_OBJECT (aboutbox));
+    gtk_window_add_accel_group(GTK_WINDOW(aboutbox), accel_group);
 
     GdkBitmap* mask;
     GdkPixmap* pm = gdk_pixmap_create_from_xpm
@@ -566,13 +550,13 @@ static void OnHelpAbout()
             (btn, "clicked",
              accel_group,
              GDK_Return,
-             0,
+             (GdkModifierType)0,
              GTK_ACCEL_LOCKED);
     gtk_widget_add_accelerator
             (btn, "clicked",
              accel_group,
              GDK_Escape,
-             0,
+             (GdkModifierType)0,
              GTK_ACCEL_LOCKED);
 
     gtk_signal_connect (GTK_OBJECT (aboutbox), "delete_event",
@@ -610,7 +594,7 @@ static void CreateStatusbar (GtkWidget** statusbar)
     m_lblLines = GTK_LABEL( gtk_label_new ("") );
     m_lblLevel = GTK_LABEL( gtk_label_new ("") );
 
-    GdkFont* fnt = GTK_WIDGET(m_lblScore)->style->font;
+    GdkFont* fnt = gtk_style_get_font(GTK_WIDGET(m_lblScore)->style);
 
     GtkWidget* frm = gtk_frame_new(NULL);
     gtk_frame_set_shadow_type( GTK_FRAME(frm), GTK_SHADOW_IN);

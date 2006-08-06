@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 1.1.2.2 2000/01/30 04:22:29 olaf Exp $
+dnl $Id: configure.in,v 1.1.2.3 2006/08/06 16:50:33 olaf Exp $
 dnl Process this file with autoconf to produce a configure script.
 AC_INIT(TetrisGameProcess.cc)
 
@@ -10,12 +10,12 @@ AC_PROG_MAKE_SET
 
 dnl Checks for libraries.
 
-AM_PATH_GTK(1.1.0, , exit 1;)
+AM_PATH_GTK_2_0(2.4.0, , exit 1;)
 
 LIBS="$LIBS $GTK_LIBS";
 CPPFLAGS="$CPPFLAGS $GTK_CFLAGS";
 
-AC_CHECK_PROG(HAVE_GTKCONFIG, gtk-config, yes)
+#AC_CHECK_PROG(HAVE_GTKCONFIG, gtk-config, yes)
 
 AC_LANG_SAVE
 AC_LANG_CPLUSPLUS

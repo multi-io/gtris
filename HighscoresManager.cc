@@ -1,4 +1,4 @@
-/*  $Id: HighscoresManager.cc,v 1.5.2.2.2.2 2006/08/05 07:03:04 olaf Exp $ */
+/*  $Id: HighscoresManager.cc,v 1.5.2.2.2.3 2006/08/06 16:50:33 olaf Exp $ */
 
 /*  GTris
  *  $Name:  $
@@ -118,7 +118,7 @@ HighscoresManager::HighscoresManager()
     gtk_window_set_policy (GTK_WINDOW (m_dialog), FALSE, FALSE, FALSE);
 
     GtkAccelGroup* accel_group = gtk_accel_group_new ();
-    gtk_accel_group_attach (accel_group, GTK_OBJECT (m_dialog));
+    gtk_window_add_accel_group(GTK_WINDOW(m_dialog), accel_group);
 
     GtkButton* b = GTK_BUTTON( gtk_button_new() );
     connect_button_accelerator (b,"_Close",accel_group);
@@ -129,7 +129,7 @@ HighscoresManager::HighscoresManager()
             (GTK_WIDGET(b), "clicked",
              accel_group,
              GDK_Escape,
-             0,
+             (GdkModifierType)0,
              GTK_ACCEL_LOCKED);
     gtk_widget_show (GTK_WIDGET(b));
 

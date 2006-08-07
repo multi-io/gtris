@@ -1,4 +1,4 @@
-/*  $Id: main.cc,v 1.6.2.2.2.3 2006/08/06 16:50:33 olaf Exp $ */
+/*  $Id: main.cc,v 1.6.2.2.2.4 2006/08/07 04:23:43 olaf Exp $ */
 
 /*  GTris
  *  $Name:  $
@@ -68,7 +68,7 @@ static void CreateMenuAndToolbar( GtkWidget  *window, GtkWidget **menubar, GtkWi
 static GtkWidget* m_mainwnd;
 
 static gint delete_wnd_event
-    ( GtkWidget*, GdkEvent, gpointer )
+    ( GtkWidget*, GdkEvent*, gpointer )
 {
     OnGameStop();
     if (m_pGameProcess->IsGameRunning())
@@ -94,13 +94,13 @@ Quit Game?", MB_YESNO))
 
 static void destroy_wnd_event (GtkWidget*, gpointer)
 {
-    gtk_main_quit ();
+    gtk_main_quit();
 }
 
 static void OnGameExit() 
 {
-    if (!delete_wnd_event(NULL,GdkEvent(),NULL))
-        destroy_wnd_event (NULL,NULL);
+    if (!delete_wnd_event(NULL,NULL,NULL))
+        gtk_main_quit();
 }
 
 
@@ -160,11 +160,11 @@ int main (int argc, char* argv[])
 
     gtk_window_set_title (GTK_WINDOW(m_mainwnd),"GTris");
 
-    gtk_window_set_policy (GTK_WINDOW (m_mainwnd), FALSE, FALSE, FALSE);
+    gtk_window_set_resizable(GTK_WINDOW (m_mainwnd), FALSE);
 
     gtk_signal_connect (GTK_OBJECT (m_mainwnd),
-                        "delete_event",
-                        GTK_SIGNAL_FUNC (delete_wnd_event),
+                        "delete-event",
+                        GTK_SIGNAL_FUNC(delete_wnd_event),
                         NULL);
     gtk_signal_connect (GTK_OBJECT(m_mainwnd),
                         "destroy",
@@ -266,6 +266,8 @@ static void OnOptionsGameOptions();
 static void OnHelpAbout();
 static void OnOptionsLevel (GtkWidget*, unsigned* pLevel);
 
+static void OnDebug1();
+
 
 #define GAME_NEW_STOCK GTK_STOCK_OPEN
 #define GAME_RUN_STOCK GTK_STOCK_OPEN
@@ -277,49 +279,19 @@ static void OnOptionsLevel (GtkWidget*, unsigned* pLevel);
 #define HELP_ABOUT_STOCK GTK_STOCK_OPEN
 
 static GtkActionEntry actions[] = {
-
-// struct GtkActionEntry {
-
-//   const gchar     *name;
-//   const gchar     *stock_id;
-//   const gchar     *label;
-//   const gchar     *accelerator;
-//   const gchar     *tooltip;
-//   GCallback  callback;
-// };
-//   { "FileMenu", NULL, "_File" },
-//   { "ViewMenu", NULL, "_View" },
-//   { "Open", GTK_STOCK_OPEN, "_Open", "<control>O", "Open a file", open_action_callback },
-//   { "Exit", GTK_STOCK_OPEN, "E_xit", "<control>Q", "Exit the program", exit_action_callback },
-//   { "ZoomIn", GTK_STOCK_ZOOM_IN, "Zoom _In", "plus", "Zoom into the image", zoom_in_action_callback },
-//   { "ZoomOut", GTK_STOCK_ZOOM_OUT, "Zoom _Out", "minus", "Zoom away from the image", zoom_out_action_callback },
-
-//   { "/_Game",        (char*)NULL,  NULL, 0, "<Branch>" },
-//   { "/Game/_New",    "<control>N", (GtkItemFactoryCallback)OnGameNew,   0, NULL },
-//   { "/Game/_Run",    "F6", (GtkItemFactoryCallback)OnGameRun,   0, NULL },
-//   { "/Game/_Stop",   "F8", (GtkItemFactoryCallback)OnGameStop,  0, NULL },
-//   { "/Game/_Pause",  "F5",  (GtkItemFactoryCallback)OnGamePause, 0, NULL },
-//   { "/Game/",  (char*)NULL,  NULL, 0, "<Separator>" },
-//   { "/Game/E_xit",  "<alt>F4",  (GtkItemFactoryCallback)OnGameExit, 0, NULL },
-//   { "/_View",        (char*)NULL,  NULL, 0, "<Branch>" },
-//   { "/View/_Highscores",  (char*)NULL,  (GtkItemFactoryCallback)OnViewHighscores, 0, NULL },
-//   { "/_Options",        (char*)NULL,  NULL, 0, "<Branch>" },
-//   { "/Options/_Game Options",  (char*)NULL,  (GtkItemFactoryCallback)OnOptionsGameOptions, 0, NULL },
-//   { "/_Help",        (char*)NULL,  NULL, 0, "<LastBranch>" },
-//   { "/Help/_About",  (char*)NULL,  (GtkItemFactoryCallback)OnHelpAbout, 0, NULL }
-
     { "Game", NULL, "_Game" },
     { "GameNew", GAME_NEW_STOCK, "_New",  "<control>N", "new game", OnGameNew },
     { "GameRun", GAME_RUN_STOCK, "_Run",  "F6", "run/resume game", OnGameRun },
     { "GameStop", GAME_STOP_STOCK, "_Stop",  "F8", "end game", OnGameStop },
     { "GamePause", GAME_PAUSE_STOCK, "_Pause",  "F5", "pause game", OnGamePause },
-    { "GameExit", GAME_EXIT_STOCK, "E_xit",  "<alt>F4", "exit gtris", OnGameExit },
+    { "GameExit", GAME_EXIT_STOCK, "E_xit",  "<alt>Q", "exit gtris", OnGameExit },
     { "View", NULL, "_View" },
     { "ViewHighscores", VIEW_HSC_STOCK, "_Highscores",  NULL, "view highscores", OnViewHighscores },
     { "Options", NULL, "_Options" },
     { "GameOptions", GAME_OPTIONS_STOCK, "_Game Options",  NULL, "view highscores", OnOptionsGameOptions },
     { "Help", NULL, "_Help" },
     { "HelpAbout", HELP_ABOUT_STOCK, "_About",  NULL, NULL, OnHelpAbout },
+    { "Debug1", HELP_ABOUT_STOCK, "_Debug1",  NULL, NULL, OnDebug1 },
 };
 
 static void UpdateItems ();
@@ -350,6 +322,7 @@ static void CreateMenuAndToolbar( GtkWidget  *window, GtkWidget **menubar, GtkWi
     *toolbar = gtk_ui_manager_get_widget (ui_manager, "/toolbar");
     g_object_ref(*toolbar);
 
+    /*
     //add menu items for selecting the level directly
     static unsigned levels[nLevels];
 
@@ -385,8 +358,10 @@ static void CreateMenuAndToolbar( GtkWidget  *window, GtkWidget **menubar, GtkWi
                             GTK_SIGNAL_FUNC (OnOptionsLevel),
                             (gpointer) (levels+i));
     }
-
+    */
     UpdateItems ();
+
+    g_object_unref(G_OBJECT(ui_manager));
 }
 
 
@@ -491,10 +466,20 @@ static void OnOptionsGameOptions()
         }
         gtk_brick_viewer_SetBrickSize (m_bvPlayField,bs);
         gtk_brick_viewer_SetBrickSize (m_bvNextField,bs);
-        GtkRequisition r;
-        gtk_signal_emit_by_name (GTK_OBJECT (m_mainwnd), "size_request",&r);
-        gtk_widget_set_usize (m_mainwnd,r.width,r.height);
-        gdk_window_resize (m_mainwnd->window,r.width,r.height);
+//         GtkRequisition r;
+//         g_signal_emit_by_name (m_mainwnd, "size_request", &r);
+// //         gtk_widget_set_usize (m_mainwnd,r.width,r.height);
+// //         gdk_window_resize (m_mainwnd->window,r.width,r.height);
+
+//         printf("requisition: %i x %i pixels\n",r.width,r.height);
+//         //gtk_widget_set_usize (m_mainwnd,r.width,r.height);
+//         //gdk_window_resize (m_mainwnd->window,r.width,r.height);
+
+//         gtk_window_set_default_size(GTK_WINDOW(m_mainwnd),r.width,r.height);
+// //         gtk_window_resize (GTK_WINDOW(m_mainwnd),r.width,r.height);
+// //         //gtk_window_set_default_size(GTK_WINDOW(m_mainwnd),400,700);
+
+        gtk_window_resize(GTK_WINDOW(m_mainwnd),1,1);
     }
 }
 
@@ -570,6 +555,15 @@ static void OnHelpAbout()
 
     gtk_widget_destroy (GTK_WIDGET(aboutbox));
 }
+
+
+static void OnDebug1() {
+    printf("OnDebug1...\n");
+//     gtk_window_set_default_size(GTK_WINDOW(m_mainwnd),-1,-1);
+//     gtk_window_set_default_size(GTK_WINDOW(m_mainwnd),1,1);
+    gtk_window_resize(GTK_WINDOW(m_mainwnd),1,1);
+}
+
 
 static void on_aboutbox_close_click ( GtkWidget*, gpointer )
 {

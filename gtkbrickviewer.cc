@@ -1,4 +1,4 @@
-/*  $Id: gtkbrickviewer.cc,v 1.4.2.2.2.1 2006/08/05 07:03:04 olaf Exp $ */
+/*  $Id: gtkbrickviewer.cc,v 1.4.2.2.2.2 2006/08/07 04:23:43 olaf Exp $ */
 
 /*  GTris
  *  $Name:  $
@@ -26,9 +26,9 @@
 
 static GtkWidgetClass* parent_class = (GtkWidgetClass*)NULL;
 
-static void gtk_brick_viewer_class_init (GtkBrickViewerClass *klass);
-static void gtk_brick_viewer_init (GtkBrickViewer* bv);
-static void gtk_brick_viewer_destroy (GtkObject *object);
+static void gtk_brick_viewer_class_init (GtkBrickViewerClass *klass, gpointer);
+static void gtk_brick_viewer_init (GtkBrickViewer* bv, gpointer);
+static void gtk_brick_viewer_dispose (GObject *object);
 
 static void gtk_brick_viewer_realize (GtkWidget* widget);
 static void gtk_brick_viewer_size_request (GtkWidget* widget,GtkRequisition *requisition);
@@ -37,41 +37,44 @@ static gint gtk_brick_viewer_expose (GtkWidget      *widget, GdkEventExpose *eve
 
 
 
-guint gtk_brick_viewer_get_type ()
+GType gtk_brick_viewer_get_type ()
 {
-    static guint type = 0;
+    static GType type = 0;
 
     if (!type)
     {
-        GtkTypeInfo ti =
+        static const GTypeInfo ti =
         {
-            type_name: "GtkBrickViewer",
-            object_size: sizeof (GtkBrickViewer),
             class_size: sizeof (GtkBrickViewerClass),
-            class_init_func: (GtkClassInitFunc) gtk_brick_viewer_class_init,
-            object_init_func: (GtkObjectInitFunc) gtk_brick_viewer_init,
-            //arg_set_func: (GtkArgSetFunc) NULL,
-            //arg_get_func: (GtkArgGetFunc) NULL,
+            base_init: NULL,
+            base_finalize: NULL,
+            class_init: (GClassInitFunc)gtk_brick_viewer_class_init,
+            class_finalize: NULL,
+            class_data: NULL,
+            instance_size: sizeof (GtkBrickViewer),
+            n_preallocs: 0,
+            instance_init: (GInstanceInitFunc)gtk_brick_viewer_init,
+            value_table: NULL
         };
 
-        type = gtk_type_unique (gtk_widget_get_type (), &ti);
+        type = g_type_register_static(GTK_TYPE_WIDGET, "GtkBrickViewer", &ti, (GTypeFlags)0);
     }
 
     return type;
 }
 
 
-static void gtk_brick_viewer_class_init (GtkBrickViewerClass *klass)
+static void gtk_brick_viewer_class_init (GtkBrickViewerClass *klass, gpointer)
 {
-    GtkObjectClass *object_class;
+    GObjectClass *object_class;
     GtkWidgetClass *widget_class;
 
-    object_class = (GtkObjectClass*) klass;
-    widget_class = (GtkWidgetClass*) klass;
+    object_class = G_OBJECT_CLASS(klass);
+    widget_class = GTK_WIDGET_CLASS(klass);
 
-    parent_class = (GtkWidgetClass*) gtk_type_class(gtk_widget_get_type());
+    parent_class = widget_class;
 
-    object_class->destroy = gtk_brick_viewer_destroy;
+    object_class->dispose = gtk_brick_viewer_dispose;
 
     widget_class->realize = gtk_brick_viewer_realize;
     widget_class->expose_event = gtk_brick_viewer_expose;
@@ -80,14 +83,14 @@ static void gtk_brick_viewer_class_init (GtkBrickViewerClass *klass)
 }
 
 
-static void gtk_brick_viewer_init (GtkBrickViewer* bv)
-{
+static void gtk_brick_viewer_init (GtkBrickViewer* bv, gpointer) {
+    bv->dispose_has_run = FALSE;
 }
 
 
 GtkWidget* gtk_brick_viewer_new (unsigned cols, unsigned rows, unsigned BrickSize)
 {
-    GtkBrickViewer* bv = (GtkBrickViewer*) gtk_type_new(gtk_brick_viewer_get_type ());
+    GtkBrickViewer* bv = (GtkBrickViewer*) gtk_type_new(gtk_brick_viewer_get_type());
 
     bv->m_Cols = cols;
     bv->m_Rows = rows;
@@ -108,12 +111,17 @@ GtkWidget* gtk_brick_viewer_new (unsigned cols, unsigned rows, unsigned BrickSiz
 }
 
 
-static void gtk_brick_viewer_destroy (GtkObject *object)
+static void gtk_brick_viewer_dispose (GObject *object)
 {
     g_return_if_fail (object != NULL);
     g_return_if_fail (GTK_IS_BRICK_VIEWER (object));
 
     GtkBrickViewer* bv = GTK_BRICK_VIEWER (object);
+    if (bv->dispose_has_run) {
+        return;
+    }
+
+    bv->dispose_has_run = TRUE;
 
     for (int col = 0; col < bv->m_Cols; col++)
     {
@@ -166,12 +174,14 @@ void gtk_brick_viewer_SetBrickSize (GtkBrickViewer* bv, unsigned s)
 
     bv->m_BrickSize = s;
 
-    GtkWidget* widget = GTK_WIDGET(bv);
+    gtk_widget_queue_resize(GTK_WIDGET(bv));
 
-    if (GTK_WIDGET_REALIZED (widget))
-    {
-        gdk_window_resize (widget->window, s * bv->m_Cols, s * bv->m_Rows); 
-    }
+//     GtkWidget* widget = GTK_WIDGET(bv);
+
+//     if (GTK_WIDGET_REALIZED (widget))
+//     {
+//         gdk_window_resize (widget->window, s * bv->m_Cols, s * bv->m_Rows); 
+//     }
 }
 
 
@@ -309,6 +319,8 @@ static void gtk_brick_viewer_size_request (GtkWidget      *widget,
     GtkBrickViewer* bv = GTK_BRICK_VIEWER(widget);
     requisition->width  = bv->m_BrickSize * bv->m_Cols;
     requisition->height = bv->m_BrickSize * bv->m_Rows;
+
+    printf("brickviewer %lu requisition: %i x %i pixels\n",widget,requisition->width,requisition->height);
 }
 
 

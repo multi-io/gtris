@@ -29,5 +29,7 @@
     <toolitem action="ViewHighscores"/>
     <separator/>
     <toolitem action="GameOptions"/>
+    <separator/>
+    <toolitem action="Debug1"/>
   </toolbar>
 </ui>

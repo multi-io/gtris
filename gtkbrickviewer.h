@@ -1,4 +1,4 @@
-/*  $Id: gtkbrickviewer.h,v 1.4.2.1 1999/08/29 18:28:32 olaf Exp $ */
+/*  $Id: gtkbrickviewer.h,v 1.4.2.1.2.1 2006/08/07 04:23:43 olaf Exp $ */
 
 /*  GTris
  *  $Name:  $
@@ -25,17 +25,30 @@
 #include <gdk/gdk.h>
 #include <gtk/gtkwidget.h>
 
+/*
+ * GtkBrickViewer: GTK+ widget that displays a rectangular grid of
+ * colored squares, called "bricks". The number of brick columns and
+ * rows is set at initialization time and can'T be changed
+ * afterwards. All bricks are square, i.e. they have their with and
+ * height are equal. All bricks in a GtkBrickViewer have the same size
+ * (edge length) a a given time. The edge length (and thus the size of
+ * the whole GtkBrickViewer) is set at initialization time and may be
+ * changed any time afterwards.
+ *
+ * Each brick has a color, which may be changed at any time.
+ */
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 
-
-#define GTK_BRICK_VIEWER(obj)          GTK_CHECK_CAST (obj, gtk_brick_viewer_get_type (), GtkBrickViewer)
-#define GTK_BRICK_VIEWER_CLASS(klass)  GTK_CHECK_CLASS_CAST (klass, gtk_brick_viewer_get_type (), GtkBrickViewerClass)
-#define GTK_IS_BRICK_VIEWER(obj)       GTK_CHECK_TYPE (obj, gtk_brick_viewer_get_type ())
-
+#define GTK_TYPE_BRICK_VIEWER          (gtk_brick_viewer_get_type())
+#define GTK_BRICK_VIEWER(obj)          G_TYPE_CHECK_INSTANCE_CAST((obj), GTK_TYPE_BRICK_VIEWER, GtkBrickViewer)
+#define GTK_BRICK_VIEWER_CLASS(klass)  G_TYPE_CHECK_CLASS_CAST((klass), GTK_TYPE_BRICK_VIEWER, GtkBrickViewerClass)
+#define GTK_IS_BRICK_VIEWER(obj)       G_TYPE_CHECK_INSTANCE_TYPE((obj), GTK_TYPE_BRICK_VIEWER)
+#define GTK_IS_BRICK_VIEWER_CLASS(klass)    G_TYPE_CHECK_CLASS_TYPE((klass), GTK_TYPE_BRICK_VIEWER)
+#define GTK_BRICK_VIEWER_GET_CLASS(obj)     G_TYPE_INSTANCE_GET_CLASS((obj), GTK_TYPE_BRICK_VIEWER, GtkBrickViewerClass)
 
 typedef struct _GtkBrickViewer        GtkBrickViewer;
 typedef struct _GtkBrickViewerClass   GtkBrickViewerClass;
@@ -43,9 +56,12 @@ typedef struct _GtkBrickViewerClass   GtkBrickViewerClass;
 struct _GtkBrickViewer
 {
     GtkWidget widget;
-    unsigned m_Cols, m_Rows, m_BrickSize;
 
+    /* private */
+    unsigned m_Cols, m_Rows, m_BrickSize;
     GdkColor** m_Contents;
+
+    gboolean dispose_has_run;
 };
 
 struct _GtkBrickViewerClass
@@ -56,7 +72,7 @@ struct _GtkBrickViewerClass
 
 GtkWidget* gtk_brick_viewer_new (unsigned cols, unsigned rows, unsigned BrickSize);
 
-guint gtk_brick_viewer_get_type ();
+GType gtk_brick_viewer_get_type ();
 
 unsigned gtk_brick_viewer_GetRows (GtkBrickViewer* bv);
 unsigned gtk_brick_viewer_GetCols (GtkBrickViewer* bv);

@@ -1,0 +1,12 @@
+*~
+*.o
+xpms.cc
+xpms.h
+configure
+Makefile
+config.log
+config.status
+revision
+gtris
+aclocal.m4
+autom4te.cache

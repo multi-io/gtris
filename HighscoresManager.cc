@@ -21,6 +21,7 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 #include <fstream>
 #include <algorithm>
 #include <gdk/gdkkeysyms.h>

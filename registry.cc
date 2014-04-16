@@ -22,6 +22,7 @@
 #include "registry.h"
 #include <fstream>
 #include <iostream>
+#include <string.h>
 #include <algorithm>
 #include <glib.h>
 

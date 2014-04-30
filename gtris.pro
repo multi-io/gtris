@@ -14,8 +14,10 @@ TEMPLATE = app
 
 SOURCES +=\
         mainwindow.cc \
-    main.cc
+    main.cc \
+    BrickViewer.cc
 
-HEADERS  += mainwindow.h
+HEADERS  += mainwindow.h \
+    BrickViewer.h
 
 FORMS    += mainwindow.ui

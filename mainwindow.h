@@ -12,18 +12,27 @@ class MainWindow : public QMainWindow
 {
     Q_OBJECT
 
+    Ui::MainWindow * const ui;
+    BrickViewer * /*const*/ m_playField,  * /*const*/ m_nextField;
+
 public:
     explicit MainWindow(QWidget *parent = 0);
     ~MainWindow();
 
     BrickViewer *getPlayField();
 
+    QAction * /*const*/ actionNew;
+    QAction * /*const*/ actionRun;
+    QAction * /*const*/ actionStop;
+    QAction * /*const*/ actionPause;
+    QAction * /*const*/ actionExit;
+    QAction * /*const*/ actionHighscores;
+    QAction * /*const*/ actionAbout;
+    QAction * /*const*/ actionGame_Options;
+
+
 protected:
     void resizeEvent(QResizeEvent *event);
-
-private:
-    Ui::MainWindow * const ui;
-    BrickViewer * /*const*/ m_playField,  * /*const*/ m_nextField;
 };
 
 #endif // MAINWINDOW_H

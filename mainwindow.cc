@@ -15,6 +15,14 @@ MainWindow::MainWindow(QWidget *parent) :
     ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
+    actionNew = ui->actionNew;
+    actionRun = ui->actionRun;
+    actionStop = ui->actionStop;
+    actionPause = ui->actionPause;
+    actionExit = ui->actionExit;
+    actionHighscores = ui->actionHighscores;
+    actionAbout = ui->actionAbout;
+    actionGame_Options = ui->actionGame_Options;
     QHBoxLayout *layout = new QHBoxLayout(ui->centralWidget);
     layout->setSpacing(1);
     layout->setMargin(1);
@@ -41,7 +49,7 @@ void MainWindow::resizeEvent(QResizeEvent *event) {
     int w = ui->centralWidget->width();
     int h = ui->centralWidget->height();
     int newBS = std::max(3, std::min(w / combinedSize.width(), h / combinedSize.height()));
-    qDebug() << w << " " << h << " " << newBS << endl;
+    qDebug() << w << " " << h << " " << newBS << " " << endl;
     m_playField->SetBrickSize(newBS);
     m_nextField->SetBrickSize(newBS);
 }

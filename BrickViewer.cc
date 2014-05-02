@@ -48,6 +48,10 @@ BrickViewer::BrickViewer(QWidget* parent, unsigned cols, unsigned rows, unsigned
     //setSizePolicy(...);  //TODO
 }
 
+BrickViewer::BrickViewer(unsigned cols, unsigned rows, unsigned BrickSize) :
+    BrickViewer(0, cols, rows, BrickSize) {
+}
+
 
 
 BrickViewer::~BrickViewer() {

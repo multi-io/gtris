@@ -47,7 +47,7 @@ struct stone_shape    /* Struktur für die Form eines Tetris-Steins */
  *
  * Each brick has a color, which may be changed at any time.
  */
-class BrickViewer: QWidget {
+class BrickViewer: public QWidget {
 
     Q_OBJECT
 
@@ -55,6 +55,7 @@ class BrickViewer: QWidget {
     QColor** m_Contents;  //TODO: may use unique_ptr?
 
 public:
+    BrickViewer(unsigned cols, unsigned rows, unsigned BrickSize);
     BrickViewer(QWidget* parent, unsigned cols, unsigned rows, unsigned BrickSize);
 
     unsigned GetRows();

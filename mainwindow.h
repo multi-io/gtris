@@ -2,6 +2,7 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
+#include "BrickViewer.h"
 
 namespace Ui {
 class MainWindow;
@@ -15,8 +16,14 @@ public:
     explicit MainWindow(QWidget *parent = 0);
     ~MainWindow();
 
+    BrickViewer *getPlayField();
+
+protected:
+    void resizeEvent(QResizeEvent *event);
+
 private:
-    Ui::MainWindow *ui;
+    Ui::MainWindow * const ui;
+    BrickViewer * /*const*/ m_playField,  * /*const*/ m_nextField;
 };
 
 #endif // MAINWINDOW_H

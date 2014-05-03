@@ -2,6 +2,7 @@
 #include "ui_mainwindow.h"
 
 #include <QHBoxLayout>
+#include <QKeyEvent>
 #include <QDebug>
 
 const QSize playFieldSize(12, 23);
@@ -33,10 +34,13 @@ MainWindow::MainWindow(QWidget *parent) :
 }
 
 
-BrickViewer *MainWindow::getPlayField() {
+BrickViewer *MainWindow::getPlayField() const {
     return m_playField;
 }
 
+BrickViewer *MainWindow::getNextField() const {
+    return m_nextField;
+}
 
 MainWindow::~MainWindow()
 {
@@ -45,11 +49,15 @@ MainWindow::~MainWindow()
 }
 
 
-void MainWindow::resizeEvent(QResizeEvent *event) {
+void MainWindow::resizeEvent(QResizeEvent *) {
     int w = ui->centralWidget->width();
     int h = ui->centralWidget->height();
     int newBS = std::max(3, std::min(w / combinedSize.width(), h / combinedSize.height()));
     qDebug() << w << " " << h << " " << newBS << " " << endl;
     m_playField->SetBrickSize(newBS);
     m_nextField->SetBrickSize(newBS);
+}
+
+void MainWindow::keyPressEvent(QKeyEvent *event) {
+    emit this->keyPressed(event->key());
 }

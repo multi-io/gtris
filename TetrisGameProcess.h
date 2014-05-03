@@ -1,8 +1,5 @@
-/*  $Id: TetrisGameProcess.h,v 1.2.4.3 2000/01/12 12:45:01 olaf Exp $ */
-
 /*  GTris
- *  $Name:  $
- *  Copyright (C) 1999  Olaf Klischat
+ *  Copyright (C) Olaf Klischat
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -22,16 +19,15 @@
 #ifndef TETRISGAMEPROCESS_H
 #define TETRISGAMEPROCESS_H
 
-#include "gtkbrickviewer.h"
-#include "utils.h"
+#include "BrickViewer.h"
 #include <map>
 
 
 struct tetr_stone     /* ein Tetris-Stein */
 {
-    CPoint position;           /* position relativ zur oberen, linken Ecke des Spielfeldes */
+    QPoint position;           /* position relativ zur oberen, linken Ecke des Spielfeldes */
     struct stone_shape shape;  /* Form des Steins */
-    GdkColor colour;           /* Farbe des Steins */
+    QColor colour;           /* Farbe des Steins */
     bool valid;                /* Info, ob Stein guetig ist */
 };
 
@@ -39,11 +35,11 @@ struct tetr_stone     /* ein Tetris-Stein */
 enum TGameStatus {gsStopped,gsRunning,gsPaused};
 
 //Das ist eigentlich nicht so toll, da der globale Namespace polluted wird, nur um
-//eine privates Objekt (CTetrisGameProcess::m_allocatedColors), das diesen operator< benoetigt,
+//eine privates Objekt (TetrisGameProcess::m_allocatedColors), das diesen operator< benoetigt,
 //zum Funktionieren zu bringen
-bool operator< (const GdkColor& c1, const GdkColor& c2);
+bool operator< (const QColor& c1, const QColor& c2);
 
-class CTetrisGameProcess
+class TetrisGameProcess
 {
 
 public:
@@ -51,14 +47,14 @@ public:
     typedef enum {scrWide, scrBasic, scrBlackWhite} StoneColorRange;
 
 private:
-    GtkBrickViewer* m_bvPlayField;
-    GtkBrickViewer* m_bvNextField;
+    BrickViewer* m_bvPlayField;
+    BrickViewer* m_bvNextField;
 
     tetr_stone current_stone;      /* der gerade fliegende Stein ("Flugstein") */
-    stone_shape *next_shape;       /* Form des naechsten Steins ("Next"-Feld) */
+    const stone_shape *next_shape;       /* Form des naechsten Steins ("Next"-Feld) */
     int m_score, m_lines;
 
-    NotifyFunc GameEndNotify, ScoreChangeNotify;
+    NotifyFunc GameEndNotify, ScoreChangeNotify; //TODO qt signals?
 
     void DropDownCurrentStone (void);
     bool FitsInPlayfield (tetr_stone& tstone);
@@ -67,34 +63,22 @@ private:
 
     bool GameRunning;
 
-    GdkColor CL_BLACK,CL_WHITE;
+    QColor CL_BLACK,CL_WHITE;
 
-    GdkColor* m_basiccols;
-    static const int m_nbasiccols;
-
-    //TODO: So gehts nicht ("incomplete Type CTetrisGameProcess has no member compare_colors")
+    //TODO: So gehts nicht ("incomplete Type TetrisGameProcess has no member compare_colors")
     //compare_colors global definieren (nicht besser als jetziger globaler operator<)
     //geht auch nicht ("warning: ANSI C++ forbids initialization of member `m_allocatedColors")
     //in MSVC++ testen, was das soll!
     //static bool compare_colors (const GdkColor& c1, const GdkColor& c2);
-    //std::map<GdkColor,int> m_allocatedColors(CTetrisGameProcess::compare_colors);
-
-    std::map<GdkColor,int> m_allocatedColors;
-
-    void AllocatePlayfieldColor (GdkColor* cl, int number=1);
-    void FreePlayfieldColor (const GdkColor& cl, int number=1);
-    void FreeAllAllocatedPlayfieldColors();
-
-    static void on_playfield_realized
-        (GtkWidget* playfield, CTetrisGameProcess* static_this);
+    //std::map<GdkColor,int> m_allocatedColors(TetrisGameProcess::compare_colors);
 
 public:
     //Konstruktor
     //PlayField, NextField sind die GtkBrickViewer, in denen das Spiel dargestellt wird
-    CTetrisGameProcess(GtkBrickViewer* PlayField, GtkBrickViewer* NextField);
-    virtual ~CTetrisGameProcess();
+    TetrisGameProcess(BrickViewer* PlayField, BrickViewer* NextField);
+    virtual ~TetrisGameProcess();
 
-    const CPoint PFExtend;  //Spielfeld-Ausmasse
+    const QSize PFExtend;  //Spielfeld-Ausmasse
 
     StoneColorRange m_StoneColorRange;
 
@@ -102,7 +86,7 @@ public:
     //Rueckgabe false, falls Spielende
     bool StepForth ();
     //Tastendruck verarbeiten
-    void ProcessKey(unsigned Key);
+    void ProcessKey(int Key);
 
     //Spiel anhalten
     void StopGame ();

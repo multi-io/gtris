@@ -72,11 +72,12 @@ public:
 
     void PasteRect (QColor** rect, int width, int height, int colOrig, int rowOrig);
 
-    void PasteShape (stone_shape& shape, int col, int row, QColor color);
+    void PasteShape (const stone_shape& shape, int col, int row, const QColor& color);
 
     QColor** GetRect (int colOrig, int rowOrig, int width, int height);
     QColor** GetContents ();
     void SetContents (QColor** rect);
+    static void FreeRect (QColor** rect, int height);
 
     ~BrickViewer();
 

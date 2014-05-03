@@ -1,8 +1,5 @@
-/*  $Id: TetrisGameProcess.cc,v 1.6.2.4.2.1 2006/08/05 07:03:04 olaf Exp $ */
-
 /*  GTris
- *  $Name:  $
- *  Copyright (C) 1999  Olaf Klischat
+ *  Copyright (C) Olaf Klischat
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -19,18 +16,14 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <stdlib.h>
-#include <time.h>
-#include <gdk/gdkkeysyms.h>
-#include <gtk/gtksignal.h>
+#include <cstdlib>
+#include <ctime>
 #include "TetrisGameProcess.h"
 
 using namespace std;
 
 
-#define no_shapes 7
-static stone_shape
- shape_avail [no_shapes]
+static const stone_shape shape_avail[]
   =  { {4,
 	{{0,-1},{-1,0},{0,0},{0,1}},
 	stone_shape::on_point
@@ -61,156 +54,98 @@ static stone_shape
        },
      };
 
+const int no_shapes = sizeof(shape_avail) / sizeof(shape_avail[0]);
 
+
+const QColor m_basiccols[] = {
+    QColor(0xff,0,0),
+    QColor(0,0xff,0),
+    QColor(0,0,0xff),
+    QColor(0,0xff,0xff),
+    QColor(0xff,0,0xff),
+    QColor(0xff,0xff,0),
+    QColor(0xff,0xff,0xff)
+};
+
+const int m_nbasiccols = sizeof(m_basiccols) / sizeof(m_basiccols[0]);
 
 const int                                      // Punktgutschriften fuer
-    CTetrisGameProcess::inc_stone = 50,        // 1 abgesetzten Tetris-Stein
-    CTetrisGameProcess::inc_drop1line = 5,     // "Abwerfen" (SPACE) pro Linie
-    CTetrisGameProcess::inc_line = 100,        // 1 volle Linie
-    CTetrisGameProcess::m_nbasiccols = 7;
+    TetrisGameProcess::inc_stone = 50,        // 1 abgesetzten Tetris-Stein
+    TetrisGameProcess::inc_drop1line = 5,     // "Abwerfen" (SPACE) pro Linie
+    TetrisGameProcess::inc_line = 100;        // 1 volle Linie
 
-CTetrisGameProcess::CTetrisGameProcess(GtkBrickViewer* PlayField, GtkBrickViewer* NextField) :
-    m_bvPlayField (PlayField), m_bvNextField (NextField),
-    PFExtend (gtk_brick_viewer_GetCols(PlayField), gtk_brick_viewer_GetRows(PlayField)),
-    GameRunning (false), GameEndNotify(NULL), ScoreChangeNotify(NULL),
-    m_score(0), m_lines(0), m_StoneColorRange(scrWide),
-    CL_BLACK ( RGB(0,0,0) ), CL_WHITE( RGB(0xffff,0xffff,0xffff) )
+TetrisGameProcess::TetrisGameProcess(BrickViewer* PlayField, BrickViewer* NextField) :
+    m_bvPlayField (PlayField),
+    m_bvNextField (NextField),
+    m_score(0),
+    m_lines(0),
+    GameEndNotify(0),
+    ScoreChangeNotify(0),
+    GameRunning (false),
+    CL_BLACK(Qt::black),
+    CL_WHITE(Qt::white),
+    PFExtend (PlayField->GetCols(), PlayField->GetRows()),
+    m_StoneColorRange(scrWide)
 {
     srand( (unsigned)time( NULL ) );
-
-    m_basiccols = new GdkColor[m_nbasiccols];
-    m_basiccols[0] = RGB(0xffff,0,0);
-    m_basiccols[1] = RGB(0,0xffff,0);
-    m_basiccols[2] = RGB(0,0,0xffff);
-    m_basiccols[3] = RGB(0,0xffff,0xffff);
-    m_basiccols[4] = RGB(0xffff,0,0xffff);
-    m_basiccols[5] = RGB(0xffff,0xffff,0);
-    m_basiccols[6] = RGB(0xffff,0xffff,0xffff);
-
-    if (GTK_WIDGET_REALIZED(GTK_WIDGET(m_bvPlayField)))
-        on_playfield_realized (GTK_WIDGET(m_bvPlayField),this);
-    else
-        gtk_signal_connect (GTK_OBJECT (m_bvPlayField), "realize",
-                            GTK_SIGNAL_FUNC (on_playfield_realized),
-                            this);
 }
 
-void CTetrisGameProcess::on_playfield_realized
-    (GtkWidget* playfield, CTetrisGameProcess* static_this)
+TetrisGameProcess::~TetrisGameProcess()
 {
-     GdkColormap* cm = gdk_window_get_colormap(playfield->window);
-     gdk_color_alloc (cm, &static_this->CL_BLACK);
-     gdk_color_alloc (cm, &static_this->CL_WHITE);
-}
-
-CTetrisGameProcess::~CTetrisGameProcess()
-{
-    delete[] m_basiccols;
 }
 
 
-bool operator< (const GdkColor& c1, const GdkColor& c2)
+bool operator< (const QColor& c1, const QColor& c2)
 {
-    if (c1.red != c2.red)
-        return c1.red < c2.red;
+    if (c1.red() != c2.red())
+        return c1.red() < c2.red();
     else
     {
-        if (c1.green != c2.green)
-            return c1.green < c2.green;
+        if (c1.green() != c2.green())
+            return c1.green() < c2.green();
         else
         {
-            return c1.blue < c2.blue;
+            return c1.blue() < c2.blue();
         }
     }
 }
 
-void CTetrisGameProcess::AllocatePlayfieldColor (GdkColor* cl, int number)
-{
-    g_return_if_fail (GTK_WIDGET_REALIZED(GTK_WIDGET(m_bvPlayField)));
-
-    map<GdkColor,int>::iterator pCol = m_allocatedColors.find (*cl);
-    if (pCol == m_allocatedColors.end())
-    {
-        gdk_color_alloc (gdk_window_get_colormap(GTK_WIDGET(m_bvPlayField)->window),cl);
-        m_allocatedColors[*cl] = number;
-    }
-    else
-    {
-        *cl = pCol->first;
-        pCol->second += number;
-    }
-}
-
-void CTetrisGameProcess::FreePlayfieldColor (const GdkColor& cl, int number)
-{
-    g_return_if_fail (GTK_WIDGET_REALIZED(GTK_WIDGET(m_bvPlayField)));
-
-    map<GdkColor,int>::iterator pCol = m_allocatedColors.find (cl);
-    pCol->second -= number;
-    if (pCol->second == 0)
-    {
-        GdkColor writeable_cl = cl;
-        gdk_colormap_free_colors (gdk_window_get_colormap(GTK_WIDGET(m_bvPlayField)->window),
-                                  &writeable_cl,1);
-        m_allocatedColors.erase (cl);
-    }
-}
-
-void CTetrisGameProcess::FreeAllAllocatedPlayfieldColors ()
-{
-    g_return_if_fail (GTK_WIDGET_REALIZED(GTK_WIDGET(m_bvPlayField)));
-
-    GdkColormap* cm = gdk_window_get_colormap(GTK_WIDGET(m_bvPlayField)->window);
-    for (map<GdkColor,int>::iterator pCol = m_allocatedColors.begin();
-         pCol != m_allocatedColors.end(); pCol++)
-    {
-        GdkColor nonconst_cl = pCol->first;
-        gdk_colormap_free_colors (cm,&nonconst_cl,1);
-    }
-    m_allocatedColors.clear();
-}
-
-
-void CTetrisGameProcess::DropDownCurrentStone (void)
+void TetrisGameProcess::DropDownCurrentStone (void)
 {
 
-    gtk_brick_viewer_PasteShape
-        ( m_bvPlayField,
-          current_stone.shape,
-          current_stone.position.x,
-          current_stone.position.y,
+    m_bvPlayField->PasteShape(current_stone.shape,
+          current_stone.position.x(),
+          current_stone.position.y(),
           CL_BLACK);
 
     int  depth=127;
 
     FOR_EACH_SHAPE_POINT(current_stone.shape,curr_point)
     {
-        int posx=current_stone.position.x+curr_point->x,
-            posy=current_stone.position.y+curr_point->y;
+        int posx=current_stone.position.x()+curr_point->x(),
+            posy=current_stone.position.y()+curr_point->y();
         int sy;
         for (sy=posy;
-             !PointInHeap (posx,sy) && (sy<PFExtend.y);
+             !PointInHeap (posx,sy) && (sy<PFExtend.height());
              sy++);
         if (sy-posy-1<depth)
             depth=sy-posy-1;
     }
 
-    gtk_brick_viewer_PasteShape
-        (m_bvPlayField,
-         current_stone.shape,
-         current_stone.position.x,
-         current_stone.position.y + depth,
+    m_bvPlayField->PasteShape
+        (current_stone.shape,
+         current_stone.position.x(),
+         current_stone.position.y() + depth,
          current_stone.colour);
 
     int line[30],
         no_lines=0;
 
-    map<GdkColor,int> colors2bfreed;
     //TODO: curr_point wird neu deklariert (siehe Definition
     //von FOR_EACH_SHAPE_POINT). Einige Compiler moegen das vielleicht nicht...
     FOR_EACH_SHAPE_POINT(current_stone.shape,curr_point)
     {
-        int posy=current_stone.position.y+curr_point->y+depth;
+        int posy=current_stone.position.y()+curr_point->y()+depth;
 
         bool found = false;
         int i;
@@ -222,25 +157,17 @@ void CTetrisGameProcess::DropDownCurrentStone (void)
             continue;
 
         bool FullLine = true;
-        map<GdkColor,int> line_colors;
-        for (i=0; i<PFExtend.x; i++)
+        for (i=0; i<PFExtend.width(); i++)
         {
-            GdkColor cl = gtk_brick_viewer_GetBrickColor(m_bvPlayField,i,posy);
+            QColor cl = m_bvPlayField->GetBrickColor(i,posy);
             if (cl == CL_BLACK)
             {
                 FullLine = false;
-                break;
             }
-            line_colors[cl]++;
         }
         if (FullLine)
         {
-            line [no_lines++]=posy;
-            for (map<GdkColor,int>::iterator it = line_colors.begin();
-                 it != line_colors.end(); it++)
-            {
-                colors2bfreed[it->first] += it->second;
-            }
+            line[no_lines++]=posy;
         }
     }
 
@@ -248,38 +175,34 @@ void CTetrisGameProcess::DropDownCurrentStone (void)
     line[0]=22; line[1]=21; line[2]=20; line[3]=19; no_lines=4;
 #   endif
 
-    GdkColor** cntnts = gtk_brick_viewer_GetContents(m_bvPlayField);
-    for (int i=0;i<no_lines;i++)
-    {
-        delete[] cntnts[line[i]];
-        for (int l=line[i]; l > 0; l--)
-            cntnts[l] = cntnts[l-1];
-        cntnts[0] = new GdkColor[PFExtend.x];
-        for (int i2=0; i2<PFExtend.x; i2++)
-            cntnts[0][i2] = CL_BLACK;
-        for (int n=i+1;n<no_lines;n++)
-            if (line[n]<line[i]) line[n]++;
-    }
+    if (no_lines) {
+        QColor** cntnts = m_bvPlayField->GetContents();
+        for (int i=0;i<no_lines;i++)
+        {
+            delete[] cntnts[line[i]];
+            for (int l=line[i]; l > 0; l--)
+                cntnts[l] = cntnts[l-1];
+            cntnts[0] = new QColor[PFExtend.width()];
+            for (int i2=0; i2<PFExtend.width(); i2++)
+                cntnts[0][i2] = CL_BLACK;
+            for (int n=i+1;n<no_lines;n++)
+                if (line[n]<line[i]) line[n]++;
+        }
 
-/*  if (EnableSounds)
-    if (no_lines>0)
-         sndPlaySound (wavLine,SND_ASYNC);
-    else sndPlaySound (wavTouchDown,SND_ASYNC);
-*/
+    /*  if (EnableSounds)
+        if (no_lines>0)
+             sndPlaySound (wavLine,SND_ASYNC);
+        else sndPlaySound (wavTouchDown,SND_ASYNC);
+    */
 
-    gtk_brick_viewer_SetContents (m_bvPlayField,cntnts);
-    gtk_brick_viewer_FreeRect (cntnts,gtk_brick_viewer_GetRows(m_bvPlayField));
-
-    for (map<GdkColor,int>::iterator it = colors2bfreed.begin();
-         it != colors2bfreed.end(); it++)
-    {
-        FreePlayfieldColor (it->first,it->second);
+        m_bvPlayField->SetContents (cntnts);
+        m_bvPlayField->FreeRect(cntnts,m_bvPlayField->GetRows());
     }
 
     m_score += inc_stone+depth*inc_drop1line+no_lines*inc_line;
     m_lines += no_lines;
 
-    current_stone.valid=FALSE;
+    current_stone.valid=false;
 }
 
 //TODO: Performance - Verbesserung und Vereinfachungen in DropDownCurrentStone:
@@ -295,15 +218,15 @@ void CTetrisGameProcess::DropDownCurrentStone (void)
 //(viele Schleifen, "colors2bfreed"-Map) verwenden zu muessen.
 
 
-bool CTetrisGameProcess::FitsInPlayfield (/*const*/ tetr_stone& tstone)
+bool TetrisGameProcess::FitsInPlayfield (/*const*/ tetr_stone& tstone)
 {
-    bool  fits=TRUE;
+    bool fits = true;
     FOR_EACH_SHAPE_POINT(tstone.shape,curr_point)
     {
-        int pfx = tstone.position.x+curr_point->x,
-            pfy = tstone.position.y+curr_point->y;
-        fits = (pfx>=0) && (pfx<PFExtend.x) &&
-            (pfy>=0) && (pfy<PFExtend.y) &&
+        int pfx = tstone.position.x()+curr_point->x(),
+            pfy = tstone.position.y()+curr_point->y();
+        fits = (pfx>=0) && (pfx<PFExtend.width()) &&
+            (pfy>=0) && (pfy<PFExtend.height()) &&
             !PointInHeap (pfx,pfy);
         if (!fits) break;
     }
@@ -311,62 +234,50 @@ bool CTetrisGameProcess::FitsInPlayfield (/*const*/ tetr_stone& tstone)
 }
 
 
-bool CTetrisGameProcess::PointInHeap (int col, int row)
+bool TetrisGameProcess::PointInHeap (int col, int row)
 {
     if (current_stone.valid)
     {
         FOR_EACH_SHAPE_POINT (current_stone.shape, curr_point)
-            if ((col == current_stone.position.x + curr_point->x) &&
-                (row == current_stone.position.y + curr_point->y))
+            if ((col == current_stone.position.x() + curr_point->x()) &&
+                (row == current_stone.position.y() + curr_point->y()))
                 return false;
     }
 
-    return gtk_brick_viewer_GetBrickColor (m_bvPlayField,col,row) != CL_BLACK;
+    return m_bvPlayField->GetBrickColor(col,row) != CL_BLACK;
 }
 
 
-void CTetrisGameProcess::SetCurrentStone (const tetr_stone& new_one)
+void TetrisGameProcess::SetCurrentStone (const tetr_stone& new_one)
 {
-    bool no_allocs = false;
-    if (current_stone.valid &&
-        (current_stone.colour == new_one.colour) &&
-        (current_stone.shape.no_points == new_one.shape.no_points))
-        no_allocs = true;
-
     if (current_stone.valid)
     {
-        gtk_brick_viewer_PasteShape
-            (m_bvPlayField,
-             current_stone.shape,
-             current_stone.position.x,
-             current_stone.position.y,
+        m_bvPlayField->PasteShape
+            (current_stone.shape,
+             current_stone.position.x(),
+             current_stone.position.y(),
              CL_BLACK);
-        if (!no_allocs)
-            FreePlayfieldColor (current_stone.colour, current_stone.shape.no_points);
     }
 
     current_stone = new_one;
-    current_stone.valid = TRUE;
+    current_stone.valid = true;
 
-    if (!no_allocs)
-        AllocatePlayfieldColor (&current_stone.colour, current_stone.shape.no_points);
-    gtk_brick_viewer_PasteShape
-        (m_bvPlayField,
-         current_stone.shape,
-         current_stone.position.x,
-         current_stone.position.y,
+    m_bvPlayField->PasteShape
+        (current_stone.shape,
+         current_stone.position.x(),
+         current_stone.position.y(),
          current_stone.colour);
 }
 
 
-bool CTetrisGameProcess::StepForth ()
+bool TetrisGameProcess::StepForth ()
 {
     if (GameRunning)
     {
         if (current_stone.valid)
         {
             tetr_stone new_stone=current_stone;
-            new_stone.position.y++;
+            new_stone.position.setY(new_stone.position.y() + 1);
             if (FitsInPlayfield (new_stone))
             {
                 SetCurrentStone (new_stone);
@@ -378,42 +289,40 @@ bool CTetrisGameProcess::StepForth ()
         else
         {
 
-            if (!next_shape)
+            if (next_shape)
             {
-                //TODO: kann da nicht manchmal shape_avail + no_shapes herauskommen?
-                next_shape = shape_avail + (rand()/20-1) * no_shapes / (RAND_MAX/20);
-                current_stone.shape = shape_avail[(rand()/20-1) * no_shapes / (RAND_MAX/20)];
+                current_stone.shape = *next_shape;
             }
             else
             {
-                current_stone.shape = *next_shape;
-                next_shape =  shape_avail + (rand()/20-1) * no_shapes / (RAND_MAX/20);
+                //TODO: kann da nicht manchmal shape_avail + no_shapes herauskommen?
+                current_stone.shape = shape_avail[(rand()/20-1) * no_shapes / (RAND_MAX/20)];
             }
+            next_shape = shape_avail + (rand()/20-1) * no_shapes / (RAND_MAX/20);
 
-            gtk_brick_viewer_FillAll (m_bvNextField,CL_BLACK);
-            gtk_brick_viewer_PasteShape (m_bvNextField,*next_shape,2,2,CL_WHITE);
+            m_bvNextField->FillAll (CL_BLACK);
+            m_bvNextField->PasteShape (*next_shape,2,2,CL_WHITE);
 
-            current_stone.position.x=PFExtend.x/2;
+            current_stone.position.setX(PFExtend.width()/2);
             int maxy;
             maxy = -128;
             FOR_EACH_SHAPE_POINT (current_stone.shape, curr_point)
-                if (-curr_point->y>maxy) maxy=-curr_point->y;
-            current_stone.position.y=maxy;
+                if (-curr_point->y() > maxy) maxy = - curr_point->y();
+            current_stone.position.setY(maxy);
 
-            GdkColor c;
+            QColor c;
             switch (m_StoneColorRange)
             {
             case scrWide:
                 //TODO: Das ist nicht wirklich portabel, weil RAND_MAX auf
                 //verschiedenen Plattformen unterschiedliche gross sein kann.
-                c = RGB(rand()/(RAND_MAX/0x10000+1),
-                        rand()/(RAND_MAX/0x10000+1),
-                        rand()/(RAND_MAX/0x10000+1));
+                c = QColor(rand()/(RAND_MAX/0x100+1),
+                           rand()/(RAND_MAX/0x100+1),
+                           rand()/(RAND_MAX/0x100+1));
                 //Farbe zu dunkel?
-                if (((unsigned)c.red)+c.green+c.blue < 50000)
-                    //TODO: fiese  Konstruktion, die einen der 3 RGB-Werte
-                    //auf 0xffff setzt. Geht nur, wenn red der erste Wert in GdkColor ist
-                    *((&c.red)+rand()/(RAND_MAX/3+1)) = 0xffff;
+                if (c.red()+c.green()+c.blue() < 200) {
+                    c = c.lighter();
+                }
                 break;
             default:
             case scrBasic:
@@ -441,52 +350,50 @@ bool CTetrisGameProcess::StepForth ()
 }
 
 
-void CTetrisGameProcess::ProcessKey(unsigned Key)
+void TetrisGameProcess::ProcessKey(int Key)
 {
     if (GameRunning && current_stone.valid)
 
     {
         tetr_stone new_stone=current_stone;
         int temp;
-        GdkPoint* curr_point;
         switch (Key)
         {
-        case GDK_Left:
-            new_stone.position.x--;
+        case Qt::Key_Left:
+            new_stone.position.setX(new_stone.position.x() - 1);
             if (FitsInPlayfield (new_stone))
                 SetCurrentStone (new_stone);
             break;
 
-        case GDK_Right:
-            new_stone.position.x++;
+        case Qt::Key_Right:
+            new_stone.position.setX(new_stone.position.x() + 1);
             if (FitsInPlayfield (new_stone))
                 SetCurrentStone (new_stone);
             break;
 
-        case GDK_Down:
+        case Qt::Key_Down:
             FOR_EACH_SHAPE_POINT (new_stone.shape, curr_point)
             {
-                temp=curr_point->x;
-                curr_point->x=-curr_point->y
-                    +(new_stone.shape.rot_point==stone_shape::on_point?0:1);
-                curr_point->y=temp;
+                temp = curr_point->x();
+                curr_point->setX(-curr_point->y() +(new_stone.shape.rot_point==stone_shape::on_point ? 0 : 1));
+                curr_point->setY(temp);
             }
             if (FitsInPlayfield (new_stone))
                 SetCurrentStone (new_stone);
             break;
 
-        case GDK_Up:
+        case Qt::Key_Up:
             FOR_EACH_SHAPE_POINT (new_stone.shape, curr_point)
             {
-                temp=curr_point->x;
-                curr_point->x=curr_point->y;
-                curr_point->y=-temp+(new_stone.shape.rot_point==stone_shape::on_point?0:1);
+                temp = curr_point->x();
+                curr_point->setX(curr_point->y());
+                curr_point->setY(-temp + (new_stone.shape.rot_point==stone_shape::on_point ? 0 : 1));
             }
             if (FitsInPlayfield (new_stone))
                 SetCurrentStone (new_stone);
             break;
 
-        case ' ':
+        case Qt::Key_Space:
             DropDownCurrentStone ();
             break;
 
@@ -495,16 +402,15 @@ void CTetrisGameProcess::ProcessKey(unsigned Key)
 }
 
 
-void CTetrisGameProcess::StopGame ()
+void TetrisGameProcess::StopGame ()
 {
     GameRunning = false;
 }
 
 
-void CTetrisGameProcess::StartNewGame ()
+void TetrisGameProcess::StartNewGame ()
 {
-    gtk_brick_viewer_FillAll (m_bvPlayField,CL_BLACK);
-    FreeAllAllocatedPlayfieldColors();
+    m_bvPlayField->FillAll(CL_BLACK);
     next_shape = NULL;
     current_stone.valid = false;
     m_score = m_lines = 0;

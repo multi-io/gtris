@@ -26,7 +26,6 @@
 #include <cassert>
 
 static QColor** AllocateRect (int width, int height);
-static void FreeRect (QColor** rect, int height);
 
 
 BrickViewer::BrickViewer(QWidget* parent, unsigned cols, unsigned rows, unsigned BrickSize) :
@@ -95,7 +94,7 @@ static QColor** AllocateRect (int width, int height)
 }
 
 
-static void FreeRect (QColor** rect, int height)
+void BrickViewer::FreeRect (QColor** rect, int height)
 {
     for (int row = 0; row < height; row++)
         delete[] rect[row];
@@ -139,11 +138,11 @@ void BrickViewer::FillAll (QColor color)
     FillRect (0, 0, m_Cols - 1, m_Rows - 1, color);
 }
 
-void BrickViewer::PasteShape (stone_shape& shape, int col, int row, QColor color)
+void BrickViewer::PasteShape (const stone_shape& shape, int col, int row, const QColor& color)
 {
     int minCol=100000, minRow=100000,
         maxCol=-100000, maxRow=-100000;
-    for (QPoint* p = shape.relpos;
+    for (const QPoint* p = shape.relpos;
          p - shape.relpos < shape.no_points;
          p++)
     {

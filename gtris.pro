@@ -11,13 +11,16 @@ greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 TARGET = gtris
 TEMPLATE = app
 
+QMAKE_CXXFLAGS += -std=c++11
 
 SOURCES +=\
         mainwindow.cc \
     main.cc \
-    BrickViewer.cc
+    BrickViewer.cc \
+    TetrisGameProcess.cc
 
 HEADERS  += mainwindow.h \
-    BrickViewer.h
+    BrickViewer.h \
+    TetrisGameProcess.h
 
 FORMS    += mainwindow.ui

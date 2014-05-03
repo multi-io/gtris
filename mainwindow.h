@@ -19,7 +19,8 @@ public:
     explicit MainWindow(QWidget *parent = 0);
     ~MainWindow();
 
-    BrickViewer *getPlayField();
+    BrickViewer *getPlayField() const;
+    BrickViewer *getNextField() const;
 
     QAction * /*const*/ actionNew;
     QAction * /*const*/ actionRun;
@@ -30,9 +31,12 @@ public:
     QAction * /*const*/ actionAbout;
     QAction * /*const*/ actionGame_Options;
 
+signals:
+    void keyPressed(int key);
 
 protected:
     void resizeEvent(QResizeEvent *event);
+    void keyPressEvent(QKeyEvent *event);
 };
 
 #endif // MAINWINDOW_H

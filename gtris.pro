@@ -17,10 +17,13 @@ SOURCES +=\
         mainwindow.cc \
     main.cc \
     BrickViewer.cc \
-    TetrisGameProcess.cc
+    TetrisGameProcess.cc \
+    HighscoresManager.cc
 
 HEADERS  += mainwindow.h \
     BrickViewer.h \
-    TetrisGameProcess.h
+    TetrisGameProcess.h \
+    HighscoresManager.h
 
-FORMS    += mainwindow.ui
+FORMS    += mainwindow.ui \
+    HighscoresWindow.ui

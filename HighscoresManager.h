@@ -1,8 +1,5 @@
-/*  $Id: HighscoresManager.h,v 1.4.2.1.2.1 2006/08/05 07:03:04 olaf Exp $ */
-
 /*  GTris
- *  $Name:  $
- *  Copyright (C) 1999  Olaf Klischat
+ *  Copyright (C) Olaf Klischat
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -22,55 +19,62 @@
 #ifndef HIGHSCORES_MANAGER_H
 #define HIGHSCORES_MANAGER_H
 
-#include <vector>
+#include <QDialog>
+#include <QTableWidget>
+
 #include <string>
-#include <time.h>
-#include <gtk/gtk.h>
+#include <ctime>
+#include <iostream>
+#include <set>
 
 #define nLevels 5
 #define nEntries 20
 
-struct THscEntry
+struct HscEntry
 {
-    THscEntry() {}
-    THscEntry(const char* name, unsigned score, unsigned lines, int date);
-    THscEntry(const THscEntry& e);
+    HscEntry() {}
+    HscEntry(const char* name, unsigned score, unsigned lines, int date);
+    HscEntry(const HscEntry& e);
     std::string name;
     unsigned score,lines;
     time_t date;
-    bool operator< (const THscEntry& e2) const;
-    bool operator== (const THscEntry& e2) const;
-    friend std::ostream& operator<< (std::ostream&, const THscEntry&);
-    friend std::istream& operator>> (std::istream&, THscEntry&);
+    bool operator< (const HscEntry& e2) const;
+    bool operator== (const HscEntry& e2) const;
+    friend std::ostream& operator<< (std::ostream&, const HscEntry&);
+    friend std::istream& operator>> (std::istream&, HscEntry&);
 };
 
-typedef std::vector <THscEntry> THscList;
+typedef std::multiset<HscEntry> HscList;
+
+
+namespace Ui {
+    class HighscoresWindowUi;
+}
 
 
 class HighscoresManager
 {
-    THscList m_HscLists[nLevels];
+    QDialog *m_hscWindow;
+    Ui::HighscoresWindowUi *m_hscWindowUi;
+    QTableWidget *m_tables[nLevels];
+    HscList m_hscLists[nLevels];
 
-    GtkDialog* m_dialog;
-    GtkCList* m_CLists[nLevels];
-    GtkNotebook* m_notebook;
-
-    void UpdateList (int iLevel);
+    void rebuildTable(int iLevel);
 
 public:
     HighscoresManager();
     ~HighscoresManager();
 
-    void AddNewEntry (const THscEntry& entry, int iLevel);
-    int GetLeastScore (int iLevel) const;
+    void addNewEntry (const HscEntry& entry, int iLevel);
+    int getLeastScore (int iLevel) const;
 
-    bool LoadFromFile (const char* file);
-    bool SaveToFile (const char* file) const;
+    bool loadFromFile (const char* file);
+    bool saveToFile (const char* file) const;
 
-    void ShowDialog (bool bShow = true);
-    bool IsDialogVisible () const;
+    void showDialog (bool bShow = true);
+    bool isDialogVisible () const;
 
-    static bool HighscoresUserQuery (THscEntry* entry, int level);
+    static bool highscoresUserQuery(HscEntry* entry, int level);
 };
 
 

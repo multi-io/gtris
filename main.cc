@@ -1,5 +1,6 @@
 #include "mainwindow.h"
 #include "TetrisGameProcess.h"
+#include "HighscoresManager.h"
 
 #include <QAction>
 #include <QMessageBox>
@@ -13,6 +14,7 @@
 static QTimer timer;
 //static std::unique_ptr<TetrisGameProcess> gameProc;
 static TetrisGameProcess *gameProc;
+static HighscoresManager *hscManager;
 
 static void timerTick() {
     if (!gameProc->StepForth()) {
@@ -39,13 +41,29 @@ int main(int argc, char *argv[])
     MainWindow w;
 
     gameProc = new TetrisGameProcess(w.getPlayField(), w.getNextField());
-    QObject::connect(w.actionNew, &QAction::triggered, &newGame);
+    hscManager = new HighscoresManager();
+    hscManager->addNewEntry(HscEntry("Olaf", 211233, 10, 88923), 0);
+    hscManager->addNewEntry(HscEntry("Joe", 202995, 12, 88924), 0);
+    hscManager->addNewEntry(HscEntry("Suzy", 1788, 7, 98920), 0);
+    hscManager->addNewEntry(HscEntry("Lenny", 232995, 12, 88924), 0);
 
+    hscManager->addNewEntry(HscEntry("Joe", 89932, 12, 3388924), 4);
+    hscManager->addNewEntry(HscEntry("Suzy", 93984, 7, 5698920), 4);
+    hscManager->addNewEntry(HscEntry("Lenny", 25653, 12, 1988924), 4);
+
+    for (int i = 1000; i < 100000; i += 1000) {
+        hscManager->addNewEntry(HscEntry("Jonny", i, i/10, time(0)), 3);
+    }
+
+    printf("%i\n%i\n%i\n", hscManager->getLeastScore(0), hscManager->getLeastScore(1), hscManager->getLeastScore(3));
+
+    QObject::connect(w.actionNew, &QAction::triggered, &newGame);
     //QObject::connect(&w, &MainWindow::keyPressed, gameProc, &TetrisGameProcess::ProcessKey);
     //QObject::connect(&w, &MainWindow::keyPressed, std::bind(&TetrisGameProcess::ProcessKey, *gameProc, std::placeholders::_1));
     QObject::connect(&w, &MainWindow::keyPressed, &processKey);
 
     w.show();
+    hscManager->showDialog(true);
     QObject::connect(&timer, &QTimer::timeout, &timerTick);
     timer.start(500);
     gameProc->StartNewGame();

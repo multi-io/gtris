@@ -19,6 +19,8 @@
 #include "HighscoresManager.h"
 #include "ui_HighscoresWindow.h"
 
+#include "ui_HscEntryDialog.h"
+
 #include <cstdlib>
 #include <cstdio>
 #include <cstring>
@@ -35,7 +37,7 @@ using namespace std;
 const QStringList headers = {"Name", "Score", "Lines", "Date"};
 
 
-HscEntry::HscEntry(const char* iname, unsigned iscore, unsigned ilines, int idate) :
+HscEntry::HscEntry(const char* iname, unsigned iscore, unsigned ilines, time_t idate) :
     name(iname), score(iscore), lines(ilines), date(idate)
 {
 }
@@ -99,8 +101,9 @@ istream& operator>> (istream& is, HscEntry& e)
 }
 
 
-HighscoresManager::HighscoresManager() {
-    m_hscWindow = new QDialog();
+HighscoresManager::HighscoresManager(QWidget *parent) :
+        m_parent(parent) {
+    m_hscWindow = new QDialog(parent);
     m_hscWindowUi = new Ui::HighscoresWindowUi();
     m_hscWindowUi->setupUi(m_hscWindow);
     //m_hscWindow->adjustSize();
@@ -173,5 +176,21 @@ bool HighscoresManager::isDialogVisible () const {
 }
 
 bool HighscoresManager::highscoresUserQuery(HscEntry* entry, int level) {
-
+    QDialog *dlg = new QDialog(m_parent);
+    auto ui = new Ui::HscEntryDialog();
+    ui->setupUi(dlg);
+    char buf[50];
+    snprintf(buf, sizeof(buf), "%i", level);
+    ui->levelLabel->setText(buf);
+    snprintf(buf, sizeof(buf), "%i", entry->score);
+    ui->scoreLabel->setText(buf);
+    snprintf(buf, sizeof(buf), "%i", entry->lines);
+    ui->linesLabel->setText(buf);
+    ui->nameEdit->setText(entry->name.c_str());
+    if (dlg->exec() == QDialog::Accepted) {
+        entry->name = ui->nameEdit->text().toUtf8().constData();
+        return true;
+    } else {
+        return false;
+    }
 }

@@ -33,7 +33,7 @@
 struct HscEntry
 {
     HscEntry() {}
-    HscEntry(const char* name, unsigned score, unsigned lines, int date);
+    HscEntry(const char* name, unsigned score, unsigned lines, time_t date);
     HscEntry(const HscEntry& e);
     std::string name;
     unsigned score,lines;
@@ -54,6 +54,7 @@ namespace Ui {
 
 class HighscoresManager
 {
+    QWidget *m_parent;
     QDialog *m_hscWindow;
     Ui::HighscoresWindowUi *m_hscWindowUi;
     QTableWidget *m_tables[nLevels];
@@ -62,7 +63,7 @@ class HighscoresManager
     void rebuildTable(int iLevel);
 
 public:
-    HighscoresManager();
+    HighscoresManager(QWidget *parent = 0);
     ~HighscoresManager();
 
     void addNewEntry (const HscEntry& entry, int iLevel);
@@ -74,7 +75,7 @@ public:
     void showDialog (bool bShow = true);
     bool isDialogVisible () const;
 
-    static bool highscoresUserQuery(HscEntry* entry, int level);
+    bool highscoresUserQuery(HscEntry* entry, int level);
 };
 
 

@@ -41,7 +41,7 @@ int main(int argc, char *argv[])
     MainWindow w;
 
     gameProc = new TetrisGameProcess(w.getPlayField(), w.getNextField());
-    hscManager = new HighscoresManager();
+    hscManager = new HighscoresManager(&w);
     hscManager->addNewEntry(HscEntry("Olaf", 211233, 10, 88923), 0);
     hscManager->addNewEntry(HscEntry("Joe", 202995, 12, 88924), 0);
     hscManager->addNewEntry(HscEntry("Suzy", 1788, 7, 98920), 0);
@@ -64,6 +64,14 @@ int main(int argc, char *argv[])
 
     w.show();
     hscManager->showDialog(true);
+
+    HscEntry e("Homer", 98765, 43, time(0));
+    if (hscManager->highscoresUserQuery(&e, 4)) {
+        printf("name: %s  score: %i   lines: %i\n", e.name.c_str(), e.score, e.lines);
+    } else {
+        printf("dialog aborted.");
+    }
+
     QObject::connect(&timer, &QTimer::timeout, &timerTick);
     timer.start(500);
     gameProc->StartNewGame();

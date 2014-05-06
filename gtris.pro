@@ -26,4 +26,5 @@ HEADERS  += mainwindow.h \
     HighscoresManager.h
 
 FORMS    += mainwindow.ui \
-    HighscoresWindow.ui
+    HighscoresWindow.ui \
+    HscEntryDialog.ui

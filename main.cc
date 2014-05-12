@@ -16,6 +16,9 @@ static QTimer timer;
 static TetrisGameProcess *gameProc;
 static HighscoresManager *hscManager;
 
+static int currLevel, currSpeed;
+
+
 static void timerTick() {
     if (!gameProc->StepForth()) {
         timer.stop();
@@ -24,10 +27,38 @@ static void timerTick() {
 
 
 static void newGame() {
-    QMessageBox msgBox;
-    msgBox.setText("newFile");
-    msgBox.setDefaultButton(QMessageBox::Ok);
-    msgBox.exec();
+}
+
+static void runGame() {
+}
+
+static void stopGame() {
+}
+
+static void pauseGame() {
+}
+
+static void canClose(bool *canClose) {
+    //TODO user query if game running
+    *canClose = true;
+}
+
+static void exitGame() {
+    bool cc = true;
+    canClose(&cc);
+    if (cc) {
+        QApplication::quit();
+    }
+}
+
+static void toggleHighscores() {
+    hscManager->showDialog(!hscManager->isDialogVisible());
+}
+
+static void showAbout() {
+}
+
+static void showOptions() {
 }
 
 static void processKey(int key) {
@@ -58,19 +89,22 @@ int main(int argc, char *argv[])
     printf("%i\n%i\n%i\n", hscManager->getLeastScore(0), hscManager->getLeastScore(1), hscManager->getLeastScore(3));
 
     QObject::connect(w.actionNew, &QAction::triggered, &newGame);
+    QObject::connect(w.actionRun, &QAction::triggered, &runGame);
+    QObject::connect(w.actionStop, &QAction::triggered, &stopGame);
+    QObject::connect(w.actionPause, &QAction::triggered, &pauseGame);
+    QObject::connect(w.actionExit, &QAction::triggered, &exitGame);
+    QObject::connect(w.actionHighscores, &QAction::triggered, &toggleHighscores);
+    QObject::connect(w.actionAbout, &QAction::triggered, &showAbout);
+    QObject::connect(w.actionGame_Options, &QAction::triggered, &showOptions);
+
+
     //QObject::connect(&w, &MainWindow::keyPressed, gameProc, &TetrisGameProcess::ProcessKey);
     //QObject::connect(&w, &MainWindow::keyPressed, std::bind(&TetrisGameProcess::ProcessKey, *gameProc, std::placeholders::_1));
     QObject::connect(&w, &MainWindow::keyPressed, &processKey);
 
-    w.show();
-    hscManager->showDialog(true);
+    QObject::connect(&w, &MainWindow::canClose, &canClose /*, Qt::DirectConnection*/);
 
-    HscEntry e("Homer", 98765, 43, time(0));
-    if (hscManager->highscoresUserQuery(&e, 4)) {
-        printf("name: %s  score: %i   lines: %i\n", e.name.c_str(), e.score, e.lines);
-    } else {
-        printf("dialog aborted.");
-    }
+    w.show();
 
     QObject::connect(&timer, &QTimer::timeout, &timerTick);
     timer.start(500);

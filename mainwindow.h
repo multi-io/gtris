@@ -33,10 +33,12 @@ public:
 
 signals:
     void keyPressed(int key);
+    void canClose(bool *canClose);
 
 protected:
     void resizeEvent(QResizeEvent *event);
     void keyPressEvent(QKeyEvent *event);
+    void closeEvent(QCloseEvent *event);
 };
 
 #endif // MAINWINDOW_H

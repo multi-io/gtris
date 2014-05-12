@@ -61,3 +61,13 @@ void MainWindow::resizeEvent(QResizeEvent *) {
 void MainWindow::keyPressEvent(QKeyEvent *event) {
     emit this->keyPressed(event->key());
 }
+
+void MainWindow::closeEvent(QCloseEvent *event) {
+    bool cc = true;
+    emit this->canClose(&cc);
+    if (cc) {
+        event->accept();
+    } else {
+        event->ignore();
+    }
+}

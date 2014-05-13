@@ -79,7 +79,7 @@ public:
     void SetContents (QColor** rect);
     static void FreeRect (QColor** rect, int height);
 
-    ~BrickViewer();
+    virtual ~BrickViewer();
 
 protected:
     void paintEvent(QPaintEvent * event);

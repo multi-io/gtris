@@ -64,7 +64,7 @@ class HighscoresManager
 
 public:
     HighscoresManager(QWidget *parent = 0);
-    ~HighscoresManager();
+    virtual ~HighscoresManager();
 
     void addNewEntry (const HscEntry& entry, int iLevel);
     int getLeastScore (int iLevel) const;

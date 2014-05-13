@@ -2,6 +2,8 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
+#include <QLabel>
+#include <memory>
 #include "BrickViewer.h"
 
 namespace Ui {
@@ -14,13 +16,18 @@ class MainWindow : public QMainWindow
 
     Ui::MainWindow * const ui;
     BrickViewer * /*const*/ m_playField,  * /*const*/ m_nextField;
+    QLabel *m_scoreLabel, *m_linesLabel, *m_levelLabel;
 
 public:
     explicit MainWindow(QWidget *parent = 0);
-    ~MainWindow();
+    virtual ~MainWindow();
 
     BrickViewer *getPlayField() const;
     BrickViewer *getNextField() const;
+
+    void displayScore(int score);
+    void displayLines(int lines);
+    void displayLevel(int level);
 
     QAction * /*const*/ actionNew;
     QAction * /*const*/ actionRun;

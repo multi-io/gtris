@@ -45,6 +45,7 @@
      <string>Options</string>
     </property>
     <addaction name="actionGame_Options"/>
+    <addaction name="separator"/>
    </widget>
    <widget class="QMenu" name="menuHelp">
     <property name="title">

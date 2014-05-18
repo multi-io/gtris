@@ -1,8 +1,11 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 
+#include "HighscoresManager.h"  //for nLevels
+
 #include <QHBoxLayout>
 #include <QKeyEvent>
+#include <QSignalMapper>
 #include <QDebug>
 
 const QSize playFieldSize(12, 23);
@@ -16,7 +19,8 @@ MainWindow::MainWindow(QWidget *parent) :
     ui(new Ui::MainWindow),
     m_scoreLabel(new QLabel),
     m_linesLabel(new QLabel),
-    m_levelLabel(new QLabel)
+    m_levelLabel(new QLabel),
+    m_selectedLevel(0)
 {
     ui->setupUi(this);
     actionNew = ui->actionNew;
@@ -27,10 +31,25 @@ MainWindow::MainWindow(QWidget *parent) :
     actionHighscores = ui->actionHighscores;
     actionAbout = ui->actionAbout;
     actionGame_Options = ui->actionGame_Options;
+    QActionGroup *agrp = new QActionGroup(this);
+    agrp->setExclusive(true);
+    QSignalMapper *mapper = new QSignalMapper(this);
+    for (int i = 0; i < nLevels; i++) {
+        QAction *action = ui->menuOptions->addAction(QString("Level %1").arg(i));
+        agrp->addAction(action);
+        action->setCheckable(true);
+        mapper->setMapping(action, i);
+        //connect(action, &QAction::triggered, mapper, (void (QSignalMapper::*)()) &QSignalMapper::map);
+        connect(action, SIGNAL(triggered(bool)), mapper, SLOT(map()));
+    }
+    qobject_cast<QAction*>(mapper->mapping(m_selectedLevel))->setChecked(true);
+    //the SLOT macro only works with methods actually declared as "slots" in the header
+    connect(mapper, SIGNAL(mapped(int)), this, SLOT(levelChosen(int)));
+
     QHBoxLayout *layout = new QHBoxLayout(ui->centralWidget);
     layout->setSpacing(1);
     layout->setMargin(1);
-    //QWidgets own their children and thus auto-delete them
+    //QWidgets (actually, all QObjects) own their children and thus auto-delete them
     layout->addWidget(m_playField = new BrickViewer(playFieldSize.width(), playFieldSize.height(), initialBrickSize));
     layout->addWidget(m_nextField = new BrickViewer(nextFieldSize.width(), nextFieldSize.height(), initialBrickSize));
     ui->centralWidget->setLayout(layout);
@@ -41,6 +60,11 @@ MainWindow::MainWindow(QWidget *parent) :
     displayLines(0);
     displayLevel(0);
     adjustSize();
+}
+
+void MainWindow::levelChosen(int level) {
+    qDebug() << "levelChosen: " << level << endl;
+    m_selectedLevel = level;
 }
 
 void MainWindow::displayScore(int score) {

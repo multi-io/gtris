@@ -17,6 +17,10 @@ class MainWindow : public QMainWindow
     Ui::MainWindow * const ui;
     BrickViewer * /*const*/ m_playField,  * /*const*/ m_nextField;
     QLabel *m_scoreLabel, *m_linesLabel, *m_levelLabel;
+    int m_selectedLevel;
+
+private slots:
+    void levelChosen(int level);
 
 public:
     explicit MainWindow(QWidget *parent = 0);
@@ -28,6 +32,8 @@ public:
     void displayScore(int score);
     void displayLines(int lines);
     void displayLevel(int level);
+
+    int getSelectedLevel() { return m_selectedLevel; }
 
     QAction * /*const*/ actionNew;
     QAction * /*const*/ actionRun;

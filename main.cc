@@ -8,42 +8,94 @@
 #include <QTimer>
 #include <QtWidgets>
 
-#include <memory>
-#include <functional>
-
+static MainWindow *mainWnd;
 static QTimer timer;
-//static std::unique_ptr<TetrisGameProcess> gameProc;
 static TetrisGameProcess *gameProc;
 static HighscoresManager *hscManager;
 
 static int currLevel, currSpeed;
+static bool gamePaused = false;
 
+static void updateStatusDisplay() {
+    static int prevLevel = -1, prevScore = -1;
+    if (currLevel != prevLevel) {
+        mainWnd->displayLevel(currLevel);
+        prevLevel = currLevel;
+    }
+    if (prevScore != gameProc->GetScore()) {
+        mainWnd->displayScore(gameProc->GetScore());
+        mainWnd->displayLines(gameProc->GetLines());
+        prevScore = gameProc->GetScore();
+    }
+}
 
 static void timerTick() {
     if (!gameProc->StepForth()) {
         timer.stop();
+        int score = gameProc->GetScore();
+        if (score > hscManager->getLeastScore(currLevel)) {
+            HscEntry e("Homer", gameProc->GetScore(), gameProc->GetLines(), time(0));
+            if (hscManager->highscoresUserQuery(&e, 4)) {
+                hscManager->addNewEntry(e, currLevel);
+            } else {
+                printf("dialog aborted.");
+            }
+        }
+    }
+    updateStatusDisplay();
+}
+
+static bool query(const char *text, const char *infText) {
+    QMessageBox msgBox;
+    msgBox.setText(text);
+    msgBox.setInformativeText(infText);
+    msgBox.setStandardButtons(QMessageBox::Ok | QMessageBox::Cancel);
+    msgBox.setDefaultButton(QMessageBox::Ok);
+    return (QMessageBox::Ok == msgBox.exec());
+}
+
+static void newGameAction() {
+    if (gameProc->IsGameRunning()) {
+        if (!query("Game in Progress", "Game still running. Proceed?")) {
+            return;
+        }
+    }
+    currLevel = mainWnd->getSelectedLevel();
+    timer.start(55 * (nLevels+1 - currLevel));
+    gameProc->StartNewGame();
+    gamePaused = false;
+    updateStatusDisplay();
+}
+
+static void runGameAction() {
+    if (!gameProc->IsGameRunning()) {
+        newGameAction();
+    } else if (gamePaused) {
+        timer.start(55 * (nLevels+1 - currLevel));
+        gamePaused = false;
     }
 }
 
-
-static void newGame() {
-}
-
-static void runGame() {
-}
-
-static void stopGame() {
-}
-
-static void pauseGame() {
+static void pauseGameAction() {
+    timer.stop();
+    gamePaused = true;
 }
 
 static void canClose(bool *canClose) {
-    //TODO user query if game running
-    *canClose = true;
+    if (gameProc->IsGameRunning()) {
+        *canClose = query("Game in Progress", "Game still running. Proceed?");
+    }
 }
 
-static void exitGame() {
+static void stopGameAction() {
+    bool cc = true;
+    canClose(&cc);
+    if (cc) {
+        gameProc->StopGame();
+    }
+}
+
+static void exitGameAction() {
     bool cc = true;
     canClose(&cc);
     if (cc) {
@@ -51,64 +103,54 @@ static void exitGame() {
     }
 }
 
-static void toggleHighscores() {
+static void toggleHighscoresAction() {
     hscManager->showDialog(!hscManager->isDialogVisible());
 }
 
-static void showAbout() {
+static void showAboutAction() {
 }
 
-static void showOptions() {
+static void showOptionsAction() {
 }
 
 static void processKey(int key) {
     gameProc->ProcessKey(key);
+    updateStatusDisplay();
 }
 
 
 int main(int argc, char *argv[])
 {
     QApplication a(argc, argv);
+
     MainWindow w;
+    mainWnd = &w;
 
-    gameProc = new TetrisGameProcess(w.getPlayField(), w.getNextField());
-    hscManager = new HighscoresManager(&w);
-    hscManager->addNewEntry(HscEntry("Olaf", 211233, 10, 88923), 0);
-    hscManager->addNewEntry(HscEntry("Joe", 202995, 12, 88924), 0);
-    hscManager->addNewEntry(HscEntry("Suzy", 1788, 7, 98920), 0);
-    hscManager->addNewEntry(HscEntry("Lenny", 232995, 12, 88924), 0);
+    TetrisGameProcess tgp(mainWnd->getPlayField(), mainWnd->getNextField());
+    gameProc = &tgp;
 
-    hscManager->addNewEntry(HscEntry("Joe", 89932, 12, 3388924), 4);
-    hscManager->addNewEntry(HscEntry("Suzy", 93984, 7, 5698920), 4);
-    hscManager->addNewEntry(HscEntry("Lenny", 25653, 12, 1988924), 4);
+    HighscoresManager hm(mainWnd);
+    hscManager = &hm;
 
-    for (int i = 1000; i < 100000; i += 1000) {
-        hscManager->addNewEntry(HscEntry("Jonny", i, i/10, time(0)), 3);
-    }
-
-    printf("%i\n%i\n%i\n", hscManager->getLeastScore(0), hscManager->getLeastScore(1), hscManager->getLeastScore(3));
-
-    QObject::connect(w.actionNew, &QAction::triggered, &newGame);
-    QObject::connect(w.actionRun, &QAction::triggered, &runGame);
-    QObject::connect(w.actionStop, &QAction::triggered, &stopGame);
-    QObject::connect(w.actionPause, &QAction::triggered, &pauseGame);
-    QObject::connect(w.actionExit, &QAction::triggered, &exitGame);
-    QObject::connect(w.actionHighscores, &QAction::triggered, &toggleHighscores);
-    QObject::connect(w.actionAbout, &QAction::triggered, &showAbout);
-    QObject::connect(w.actionGame_Options, &QAction::triggered, &showOptions);
-
+    QObject::connect(mainWnd->actionNew, &QAction::triggered, &newGameAction);
+    QObject::connect(mainWnd->actionRun, &QAction::triggered, &runGameAction);
+    QObject::connect(mainWnd->actionStop, &QAction::triggered, &stopGameAction);
+    QObject::connect(mainWnd->actionPause, &QAction::triggered, &pauseGameAction);
+    QObject::connect(mainWnd->actionExit, &QAction::triggered, &exitGameAction);
+    QObject::connect(mainWnd->actionHighscores, &QAction::triggered, &toggleHighscoresAction);
+    QObject::connect(mainWnd->actionAbout, &QAction::triggered, &showAboutAction);
+    QObject::connect(mainWnd->actionGame_Options, &QAction::triggered, &showOptionsAction);
+    //QObject::connect(&w, &MainWindow::levelChosen, &levelSelected);
 
     //QObject::connect(&w, &MainWindow::keyPressed, gameProc, &TetrisGameProcess::ProcessKey);
     //QObject::connect(&w, &MainWindow::keyPressed, std::bind(&TetrisGameProcess::ProcessKey, *gameProc, std::placeholders::_1));
-    QObject::connect(&w, &MainWindow::keyPressed, &processKey);
+    QObject::connect(mainWnd, &MainWindow::keyPressed, &processKey);
 
-    QObject::connect(&w, &MainWindow::canClose, &canClose /*, Qt::DirectConnection*/);
+    QObject::connect(mainWnd, &MainWindow::canClose, &canClose /*, Qt::DirectConnection*/);
 
-    w.show();
+    mainWnd->show();
 
     QObject::connect(&timer, &QTimer::timeout, &timerTick);
-    timer.start(500);
-    gameProc->StartNewGame();
 
     return a.exec();
 }

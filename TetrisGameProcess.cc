@@ -79,8 +79,6 @@ TetrisGameProcess::TetrisGameProcess(BrickViewer* PlayField, BrickViewer* NextFi
     m_bvNextField (NextField),
     m_score(0),
     m_lines(0),
-    GameEndNotify(0),
-    ScoreChangeNotify(0),
     GameRunning (false),
     CL_BLACK(Qt::black),
     CL_WHITE(Qt::white),

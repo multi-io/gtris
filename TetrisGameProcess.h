@@ -43,7 +43,6 @@ class TetrisGameProcess
 {
 
 public:
-    typedef void (*NotifyFunc) ();
     typedef enum {scrWide, scrBasic, scrBlackWhite} StoneColorRange;
 
 private:
@@ -53,8 +52,6 @@ private:
     tetr_stone current_stone;      /* der gerade fliegende Stein ("Flugstein") */
     const stone_shape *next_shape;       /* Form des naechsten Steins ("Next"-Feld) */
     int m_score, m_lines;
-
-    NotifyFunc GameEndNotify, ScoreChangeNotify; //TODO qt signals?
 
     void DropDownCurrentStone (void);
     bool FitsInPlayfield (tetr_stone& tstone);

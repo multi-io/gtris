@@ -27,7 +27,7 @@
 #include <iostream>
 #include <set>
 
-#define nLevels 5
+#define nLevels 6
 #define nEntries 20
 
 struct HscEntry

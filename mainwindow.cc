@@ -20,6 +20,7 @@ MainWindow::MainWindow(QWidget *parent) :
     m_scoreLabel(new QLabel),
     m_linesLabel(new QLabel),
     m_levelLabel(new QLabel),
+    m_speedLabel(new QLabel),
     m_selectedLevel(0)
 {
     ui->setupUi(this);
@@ -56,9 +57,11 @@ MainWindow::MainWindow(QWidget *parent) :
     statusBar()->addWidget(m_scoreLabel);
     statusBar()->addWidget(m_linesLabel);
     statusBar()->addWidget(m_levelLabel);
+    statusBar()->addWidget(m_speedLabel);
     displayScore(0);
     displayLines(0);
     displayLevel(0);
+    displaySpeed(0);
     adjustSize();
 }
 
@@ -77,6 +80,10 @@ void MainWindow::displayLines(int lines) {
 
 void MainWindow::displayLevel(int level) {
     m_levelLabel->setText(QString("Level: %1").arg(level));
+}
+
+void MainWindow::displaySpeed(int speed) {
+    m_speedLabel->setText(QString("Speed: %1").arg(speed));
 }
 
 BrickViewer *MainWindow::getPlayField() const {

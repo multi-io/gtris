@@ -111,7 +111,7 @@ HighscoresManager::HighscoresManager(QWidget *parent) :
         QTableWidget *table = m_tables[iLevel] = new QTableWidget(nEntries, 4);
         table->setHorizontalHeaderLabels(headers);
         char title[50];
-        snprintf(title, sizeof(title), "Level %i", (iLevel + 1));
+        snprintf(title, sizeof(title), "Level %i", iLevel);
         m_hscWindowUi->tabWidget->addTab(table, title);
         rebuildTable(iLevel);
     }

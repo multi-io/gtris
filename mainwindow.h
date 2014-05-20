@@ -16,7 +16,7 @@ class MainWindow : public QMainWindow
 
     Ui::MainWindow * const ui;
     BrickViewer * /*const*/ m_playField,  * /*const*/ m_nextField;
-    QLabel *m_scoreLabel, *m_linesLabel, *m_levelLabel;
+    QLabel *m_scoreLabel, *m_linesLabel, *m_levelLabel, *m_speedLabel;
     int m_selectedLevel;
 
 private slots:
@@ -32,6 +32,7 @@ public:
     void displayScore(int score);
     void displayLines(int lines);
     void displayLevel(int level);
+    void displaySpeed(int speed);
 
     int getSelectedLevel() { return m_selectedLevel; }
 

@@ -7,6 +7,9 @@
 #include <QApplication>
 #include <QTimer>
 #include <QtWidgets>
+#include <QDebug>
+#include <ctime>
+#include <cmath>
 
 static MainWindow *mainWnd;
 static QTimer timer;
@@ -15,12 +18,57 @@ static HighscoresManager *hscManager;
 
 static int currLevel, currSpeed;
 static bool gamePaused = false;
+static time_t gameStartTime;
+
+
+static int getGameTime() {
+    //TODO: account for pauses
+    return time(0) - gameStartTime;
+}
+
+
+//in level 5 (nLevels-1): speed[gameTime] := speed_c * t ^ speed_ex
+
+static const double speed_ex = 0.5;   //req'd 0<ex<=1. Smaller ex means less time spent at lower speeds and more at higher speeds. Greater ex smoothens things out. (ex=1 => linear case, same time at all speeds)
+static const double speed_l4 = 300;   //time spent at speed 4
+
+static const double speed_c = pow(1.0/speed_l4 * (pow(5, (1.0/speed_ex)) - pow(4, (1.0/speed_ex))), speed_ex);
+
+static int getSpeed(int level, int gameTime) {
+    if (level < nLevels - 1) {
+        return level;
+    } else {
+        return speed_c * pow(gameTime, speed_ex);
+    }
+}
+
+static int getCurrentlyNeededSpeed() {
+    return getSpeed(currLevel, getGameTime());
+}
+
+
+// timeMsec[speed] := t0*exp(f*speed)
+
+static const double t0 = 330.0, t4 = 110.0;  //required timerMsec values at speed 0 and 4, respectively (for backwards compat.)
+static const double f = 0.25 * log(t4/t0);
+
+static int getTimerMsec(int speed) {
+    return t0 * exp(f * speed);
+}
+
+static void startOrAdjustTimerAccordingToCurrSpeed() {
+    timer.start(getTimerMsec(currSpeed));
+}
 
 static void updateStatusDisplay() {
-    static int prevLevel = -1, prevScore = -1;
+    static int prevLevel = -1, prevScore = -1, prevSpeed = -1;
     if (currLevel != prevLevel) {
         mainWnd->displayLevel(currLevel);
         prevLevel = currLevel;
+    }
+    if (prevSpeed != currSpeed) {
+        mainWnd->displaySpeed(currSpeed);
+        prevSpeed = currSpeed;
     }
     if (prevScore != gameProc->GetScore()) {
         mainWnd->displayScore(gameProc->GetScore());
@@ -30,17 +78,28 @@ static void updateStatusDisplay() {
 }
 
 static void timerTick() {
+    static std::string prevName = "Homer";
+    if (gamePaused) {
+        return;
+    }
     if (!gameProc->StepForth()) {
         timer.stop();
         int score = gameProc->GetScore();
         if (score > hscManager->getLeastScore(currLevel)) {
-            HscEntry e("Homer", gameProc->GetScore(), gameProc->GetLines(), time(0));
+            HscEntry e(prevName.c_str(), gameProc->GetScore(), gameProc->GetLines(), time(0));
             if (hscManager->highscoresUserQuery(&e, 4)) {
                 hscManager->addNewEntry(e, currLevel);
+                prevName = e.name;
             } else {
                 printf("dialog aborted.");
             }
         }
+    }
+    //adjust speed if needed
+    int newSpeed = getCurrentlyNeededSpeed();
+    if (newSpeed != currSpeed) {
+        currSpeed = newSpeed;
+        startOrAdjustTimerAccordingToCurrSpeed();
     }
     updateStatusDisplay();
 }
@@ -61,9 +120,11 @@ static void newGameAction() {
         }
     }
     currLevel = mainWnd->getSelectedLevel();
-    timer.start(55 * (nLevels+1 - currLevel));
+    currSpeed = getCurrentlyNeededSpeed();
+    startOrAdjustTimerAccordingToCurrSpeed();
     gameProc->StartNewGame();
     gamePaused = false;
+    gameStartTime = time(0);
     updateStatusDisplay();
 }
 
@@ -71,13 +132,11 @@ static void runGameAction() {
     if (!gameProc->IsGameRunning()) {
         newGameAction();
     } else if (gamePaused) {
-        timer.start(55 * (nLevels+1 - currLevel));
         gamePaused = false;
     }
 }
 
 static void pauseGameAction() {
-    timer.stop();
     gamePaused = true;
 }
 
@@ -114,7 +173,9 @@ static void showOptionsAction() {
 }
 
 static void processKey(int key) {
-    gameProc->ProcessKey(key);
+    if (!gamePaused) {
+        gameProc->ProcessKey(key);
+    }
     updateStatusDisplay();
 }
 

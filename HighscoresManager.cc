@@ -27,7 +27,6 @@
 #include <ctime>
 #include <fstream>
 #include <algorithm>
-#include "registry.h"
 
 
 using namespace std;

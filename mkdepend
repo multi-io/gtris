@@ -1,4 +1,0 @@
-#!/bin/sh
-
-makedepend -Y *.cc 2>/dev/null
-

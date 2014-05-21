@@ -19,6 +19,7 @@
 #include <cstdlib>
 #include <ctime>
 #include "TetrisGameProcess.h"
+#include <QDebug>
 
 using namespace std;
 
@@ -319,7 +320,17 @@ bool TetrisGameProcess::StepForth ()
                            rand()/(RAND_MAX/0x100+1));
                 //Farbe zu dunkel?
                 if (c.red()+c.green()+c.blue() < 200) {
-                    c = c.lighter();
+                    switch (rand() / (RAND_MAX/3 + 1)) {
+                    case 0:
+                        c.setRed(0xff);
+                        break;
+                    case 1:
+                        c.setGreen(0xff);
+                        break;
+                    default:
+                        c.setBlue(0xff);
+                        break;
+                    }
                 }
                 break;
             default:

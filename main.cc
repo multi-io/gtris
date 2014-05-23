@@ -18,12 +18,12 @@ static HighscoresManager *hscManager;
 
 static int currLevel, currSpeed;
 static bool gamePaused = false;
-static time_t gameStartTime;
+static time_t latestGameResumeTime;
+static int gameTimeBeforeLatestResume;
 
 
 static int getGameTime() {
-    //TODO: account for pauses
-    return time(0) - gameStartTime;
+    return gameTimeBeforeLatestResume + (gamePaused ? 0 : (time(0) - latestGameResumeTime));
 }
 
 
@@ -124,7 +124,8 @@ static void newGameAction() {
     startOrAdjustTimerAccordingToCurrSpeed();
     gameProc->StartNewGame();
     gamePaused = false;
-    gameStartTime = time(0);
+    latestGameResumeTime = time(0);
+    gameTimeBeforeLatestResume = 0;
     updateStatusDisplay();
 }
 
@@ -133,10 +134,12 @@ static void runGameAction() {
         newGameAction();
     } else if (gamePaused) {
         gamePaused = false;
+        latestGameResumeTime = time(0);
     }
 }
 
 static void pauseGameAction() {
+    gameTimeBeforeLatestResume = getGameTime();
     gamePaused = true;
 }
 

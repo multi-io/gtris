@@ -25,7 +25,7 @@
    </property>
    <widget class="QMenu" name="menuGame">
     <property name="title">
-     <string>Game</string>
+     <string>&amp;Game</string>
     </property>
     <addaction name="actionNew"/>
     <addaction name="actionRun"/>
@@ -36,26 +36,24 @@
    </widget>
    <widget class="QMenu" name="menuView">
     <property name="title">
-     <string>View</string>
+     <string>&amp;View</string>
     </property>
     <addaction name="actionHighscores"/>
    </widget>
-   <widget class="QMenu" name="menuOptions">
+   <widget class="QMenu" name="menuLevel">
     <property name="title">
-     <string>Options</string>
+     <string>&amp;Level</string>
     </property>
-    <addaction name="actionGame_Options"/>
-    <addaction name="separator"/>
    </widget>
    <widget class="QMenu" name="menuHelp">
     <property name="title">
-     <string>Help</string>
+     <string>&amp;Help</string>
     </property>
     <addaction name="actionAbout"/>
    </widget>
    <addaction name="menuGame"/>
    <addaction name="menuView"/>
-   <addaction name="menuOptions"/>
+   <addaction name="menuLevel"/>
    <addaction name="menuHelp"/>
   </widget>
   <widget class="QToolBar" name="mainToolBar">
@@ -69,37 +67,46 @@
   <widget class="QStatusBar" name="statusBar"/>
   <action name="actionNew">
    <property name="text">
-    <string>New</string>
+    <string>&amp;New</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+N</string>
    </property>
   </action>
   <action name="actionRun">
    <property name="text">
-    <string>Run</string>
+    <string>&amp;Run</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+R</string>
    </property>
   </action>
   <action name="actionStop">
    <property name="text">
-    <string>Stop</string>
+    <string>&amp;Stop</string>
    </property>
   </action>
   <action name="actionPause">
    <property name="text">
-    <string>Pause</string>
+    <string>&amp;Pause</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+P</string>
    </property>
   </action>
   <action name="actionExit">
    <property name="text">
-    <string>Exit</string>
+    <string>E&amp;xit</string>
    </property>
   </action>
   <action name="actionHighscores">
    <property name="text">
-    <string>Highscores...</string>
+    <string>&amp;Highscores...</string>
    </property>
   </action>
   <action name="actionAbout">
    <property name="text">
-    <string>About...</string>
+    <string>&amp;About...</string>
    </property>
   </action>
   <action name="actionGame_Options">

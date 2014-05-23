@@ -36,7 +36,7 @@ MainWindow::MainWindow(QWidget *parent) :
     agrp->setExclusive(true);
     QSignalMapper *mapper = new QSignalMapper(this);
     for (int i = 0; i < nLevels; i++) {
-        QAction *action = ui->menuOptions->addAction(QString("Level %1").arg(i));
+        QAction *action = ui->menuLevel->addAction(QString("Level &%1").arg(i));
         agrp->addAction(action);
         action->setCheckable(true);
         mapper->setMapping(action, i);

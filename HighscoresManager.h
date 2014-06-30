@@ -59,6 +59,7 @@ class HighscoresManager
     Ui::HighscoresWindowUi *m_hscWindowUi;
     QTableWidget *m_tables[nLevels];
     HscList m_hscLists[nLevels];
+    std::string m_backingFileName;
 
     void rebuildTable(int iLevel);
 
@@ -71,6 +72,9 @@ public:
 
     bool loadFromFile (const char* file);
     bool saveToFile (const char* file) const;
+
+    void setBackingFile(const char *name);
+    bool persistToBackingFile() const;
 
     void showDialog (bool bShow = true);
     bool isDialogVisible () const;

@@ -146,6 +146,7 @@ void HighscoresManager::addNewEntry (const HscEntry& entry, int iLevel) {
         hscList.erase(--hscList.end());
     }
     rebuildTable(iLevel);
+    persistToBackingFile(); //TODO run asynchronously (in bg thread), ideally
 }
 
 int HighscoresManager::getLeastScore (int iLevel) const {
@@ -158,11 +159,61 @@ int HighscoresManager::getLeastScore (int iLevel) const {
 }
 
 bool HighscoresManager::loadFromFile (const char* file) {
-
+    ifstream fs(file, ios::in|ios::binary);
+    if (!fs.is_open()) {
+        return false;
+    }
+    fs.exceptions(ifstream::failbit | ifstream::badbit | ifstream::eofbit);
+    try {
+        HscList newLists[nLevels];
+        for (int iGrd = 0; iGrd < nLevels; iGrd++) {
+            size_t s;
+            fs.read((char*) &s, sizeof(s));
+            if (s > nEntries) {
+                return false;
+            }
+            HscList& list = newLists[iGrd];
+            for (size_t i = 0; i < s; i++) {
+                HscEntry e;
+                fs >> e;
+                list.insert(e);
+            }
+        }
+        copy(newLists, newLists + nLevels, m_hscLists);
+        for (int iLevel = 0; iLevel < nLevels; iLevel++) {
+            rebuildTable(iLevel);
+        }
+    } catch (ifstream::failure e) {
+        return false;
+    }
+    return true;
 }
 
 bool HighscoresManager::saveToFile (const char* file) const {
+    ofstream fs (file,ios::out|ios::binary);
+    if (!fs.is_open()) {
+        return false;
+    }
 
+    for (int iGrd = 0; iGrd < nLevels; iGrd++) {
+        const HscList& currList = m_hscLists[iGrd];
+        size_t s = currList.size();
+        fs.write ((char*)&s,sizeof(s));
+
+        for (const HscEntry& e: currList) {
+            fs << e;
+        }
+    }
+    return true;
+}
+
+void HighscoresManager::setBackingFile(const char *name) {
+    m_backingFileName = name;
+    loadFromFile(name);
+}
+
+bool HighscoresManager::persistToBackingFile() const {
+    return !m_backingFileName.empty() && saveToFile(m_backingFileName.c_str());
 }
 
 void HighscoresManager::showDialog (bool bShow) {

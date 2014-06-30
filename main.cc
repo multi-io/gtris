@@ -7,6 +7,7 @@
 #include <QApplication>
 #include <QTimer>
 #include <QtWidgets>
+#include <QDir>
 #include <QDebug>
 #include <ctime>
 #include <cmath>
@@ -195,6 +196,7 @@ int main(int argc, char *argv[])
 
     HighscoresManager hm(mainWnd);
     hscManager = &hm;
+    hm.setBackingFile(QDir::home().filePath(".gtrisscores.bin").toUtf8().constData());
 
     QObject::connect(mainWnd->actionNew, &QAction::triggered, &newGameAction);
     QObject::connect(mainWnd->actionRun, &QAction::triggered, &runGameAction);

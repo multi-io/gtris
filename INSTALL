@@ -1,19 +1,11 @@
 What's needed
 -------------
-- GTK+ 1.1 or higher (http://www.gtk.org)
-- recent C++ compiler (for example, GNU C++ 2.90 or higher)
+- Qt 5 or higher
+- recent C++ compiler
 
 How to install
 --------------
-1. ./configure
-   options include:
-   --prefix=DIR           installation path prefix (defaults to /usr/local)
-   --bindir=DIR           directory where the gtris binary will be installed (defaults to PREFIX/bin)
-   --with-gtk-prefix=PFX  prefix where GTK is installed (configure will try to determine this on its own)
-   For a complete list of available options, enter `./configure --help'.
-   In most cases, you shouldn't have to specify any options at all.
+1. qmake gtris.pro 
 2. make
 3. become root (if necessary)
 4. make install
-
-hscores.bin is a sample highscores file.
